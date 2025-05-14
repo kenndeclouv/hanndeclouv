@@ -74,7 +74,7 @@ module.exports = {
           pet: "petOn",
           suggestion: "suggestionOn",
           ticket: "ticketOn",
-          squad: "squadOn",
+          clan: "clanOn",
           nsfw: "nsfwOn",
           checklist: "checklistOn",
         };

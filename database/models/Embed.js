@@ -11,7 +11,7 @@ class Embed extends CacheableModel {
         messageId: { type: DataTypes.STRING, allowNull: true },
 
         title: { type: DataTypes.STRING, allowNull: false },
-        description: { type: DataTypes.STRING, allowNull: false },
+        description: { type: DataTypes.TEXT, allowNull: false },
         buttons: { type: DataTypes.JSON, defaultValue: "[]" },
         fields: { type: DataTypes.JSON, defaultValue: "[]" },
       },

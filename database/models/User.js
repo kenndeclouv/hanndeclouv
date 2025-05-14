@@ -7,7 +7,8 @@ class User extends CacheableModel {
   static init(sequelize) {
     super.init(
       {
-        userId: { type: DataTypes.STRING, allowNull: false, unique: true },
+        guildId: { type: DataTypes.STRING, allowNull: false },
+        userId: { type: DataTypes.STRING, allowNull: false },
         level: { type: DataTypes.INTEGER, defaultValue: 1 },
         xp: { type: DataTypes.INTEGER, defaultValue: 1 },
         cash: { type: DataTypes.INTEGER, defaultValue: 0 },

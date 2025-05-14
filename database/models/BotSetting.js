@@ -7,8 +7,7 @@ class BotSetting extends CacheableModel {
     return super.init(
       {
         guildId: { type: DataTypes.STRING, allowNull: false, unique: true },
-        botActivity: { type: DataTypes.STRING, allowNull: true },
-        botStatus: { type: DataTypes.STRING, allowNull: true },
+        lang: { type: DataTypes.STRING, defaultValue: "id" },
 
         // AUTOMOD
         whitelist: { type: DataTypes.JSON, defaultValue: [] },
@@ -35,7 +34,7 @@ class BotSetting extends CacheableModel {
         suggestionOn: { type: DataTypes.BOOLEAN, defaultValue: false },
         ticketOn: { type: DataTypes.BOOLEAN, defaultValue: false },
         petOn: { type: DataTypes.BOOLEAN, defaultValue: false },
-        squadOn: { type: DataTypes.BOOLEAN, defaultValue: false },
+        clanOn: { type: DataTypes.BOOLEAN, defaultValue: false },
         adventureOn: { type: DataTypes.BOOLEAN, defaultValue: false },
         levelingOn: { type: DataTypes.BOOLEAN, defaultValue: false },
         welcomeInOn: { type: DataTypes.BOOLEAN, defaultValue: false },
@@ -45,10 +44,12 @@ class BotSetting extends CacheableModel {
         checklistOn: { type: DataTypes.BOOLEAN, defaultValue: false },
         invitesOn: { type: DataTypes.BOOLEAN, defaultValue: false },
 
+        rolePrefixOn: { type: DataTypes.BOOLEAN, defaultValue: false },
+
         // LEVELING
         levelingChannelId: { type: DataTypes.STRING },
-        levelingCooldown: { type: DataTypes.INTEGER },
-        levelingXp: { type: DataTypes.INTEGER },
+        levelingCooldown: { type: DataTypes.INTEGER, defaultValue: 0 },
+        levelingXp: { type: DataTypes.INTEGER, defaultValue: 0 },
         roleRewards: { type: DataTypes.JSON, defaultValue: [] },
 
         // WELCOMER
@@ -58,8 +59,8 @@ class BotSetting extends CacheableModel {
         welcomeInText: { type: DataTypes.STRING, allowNull: true },
         welcomeOutText: { type: DataTypes.STRING, allowNull: true },
 
-        squadCategoryId: { type: DataTypes.STRING, allowNull: true },
-        squadForumId: { type: DataTypes.STRING, allowNull: true },
+        clanCategoryId: { type: DataTypes.STRING, allowNull: true },
+        clanForumId: { type: DataTypes.STRING, allowNull: true },
 
         // COOLDOWNS
         dailyCooldown: { type: DataTypes.INTEGER, defaultValue: 0 },
@@ -72,14 +73,13 @@ class BotSetting extends CacheableModel {
         gachaCooldown: { type: DataTypes.INTEGER, defaultValue: 0 },
 
         // MINECRAFT
-        minecraftIp: { type: DataTypes.INTEGER, allowNull: true },
+        minecraftIp: { type: DataTypes.STRING, allowNull: true },
         minecraftPort: { type: DataTypes.INTEGER, allowNull: true },
 
         minecraftIpChannelId: { type: DataTypes.STRING, allowNull: true },
         minecraftPortChannelId: { type: DataTypes.STRING, allowNull: true },
         minecraftStatusChannelId: { type: DataTypes.STRING, allowNull: true },
         minecraftPlayersChannelId: { type: DataTypes.STRING, allowNull: true },
-
       },
       {
         sequelize,

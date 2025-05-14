@@ -31,8 +31,11 @@ module.exports = async (message) => {
   const userId = message.author.id;
 
   // ambil pengaturan server dari cache database
-  const setting = await BotSetting.getCache({ guildId: guildId });
-
+  let setting = await BotSetting.getCache({ guildId: guildId });
+  if (!setting) {
+    setting = BotSetting.create({ guildId: guildId });
+    BotSetting.saveAndUpdateCache("guildId");
+  }
   /**
    * 🛑 abaikan channel tertentu jika diatur dalam pengaturan
    */
@@ -48,17 +51,17 @@ module.exports = async (message) => {
    * - tiap user per server dikenakan cooldown agar tidak spam XP
    */
   if (setting.levelingOn) {
-    const channel = message.guild.channels.cache.get(setting.levelingChannelId);
-    const xpPerMessage = setting.levelingXp || 15;
-    const cooldownTime = setting.levelingCooldown || 60000; // default 1 menit
+    const channel = setting.levelingChannelId ? message.guild.channels.cache.get(setting.levelingChannelId) : message.channel;
+    const xpPerMessage = typeof setting.levelingXp === "number" ? setting.levelingXp : 15;
+    const cooldownTime = typeof setting.levelingCooldown === "number" ? setting.levelingCooldown : 60000; // default 1 menit
 
     const key = `${guildId}-${userId}`; // unik per server + user
     const now = Date.now();
     const lastTimestamp = cooldown.get(key) || 0;
 
-    if (channel && now - lastTimestamp >= cooldownTime) {
-      console.log("🟢 leveling valid!");
-      await addXp(userId, xpPerMessage, message, channel);
+    if (now - lastTimestamp >= cooldownTime) {
+      // channel bisa null jika dihapus, biarkan addXp handle fallback
+      await addXp(guildId, userId, xpPerMessage, message, channel);
       cooldown.set(key, now);
     }
   }
@@ -77,7 +80,7 @@ module.exports = async (message) => {
    * - pencocokan dilakukan menggunakan regex untuk fleksibilitas
    */
   if (setting.antiBadwordOn == true) {
-    let badWords = setting.badwords || [];
+    let badWords = setting.badwords ? setting.badwords : [];
 
     // parse string json jadi array jika perlu
     if (typeof badWords === "string") {
@@ -161,9 +164,9 @@ const sendWarning = async (message, reason, originalContent = null, setting) => 
       color: 0xff0000,
       title: "> 🚨 Automod Log",
       fields: [
-        { name: "User", value: `<@${message.author.id}>`, inline: true },
-        { name: "Alasan", value: reason, inline: true },
-        { name: "Channel", value: `<#${message.channel.id}>`, inline: true },
+        { name: "User", value: `<@${message.author.id}>` },
+        { name: "Alasan", value: reason },
+        { name: "Channel", value: `<#${message.channel.id}>` },
         {
           name: "Isi Pesan",
           value: originalContent?.slice(0, 1000) || "(tidak tersedia)",

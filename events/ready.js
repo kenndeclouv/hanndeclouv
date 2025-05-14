@@ -1,6 +1,7 @@
 require("dotenv").config();
 const BotSetting = require("../database/models/BotSetting");
 const { updateStats, updateMinecraftStats } = require("../helpers");
+const { WebhookClient } = require('discord.js');
 
 module.exports = {
   name: "ready",

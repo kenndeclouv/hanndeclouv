@@ -21,12 +21,13 @@ module.exports = {
     try {
       const subcommand = interaction.options.getSubcommand();
       const userId = interaction.user.id;
+      const guildId = interaction.guild.id;
 
-      // let user = await User.findOne({ where: { userId } });
-      let user = await User.getCache({ userId: userId });
+      let user = await User.getCache({ userId: userId, guildId: interaction.guild.id });
       if (!user) {
         if (subcommand === "start") {
           user = await User.create({
+            guildId,
             userId,
             level: 1,
             xp: 0,
@@ -109,29 +110,11 @@ module.exports = {
           }
 
           // cek inventory dengan await
-          // const sword = await Inventory.getCache({ userId: interaction.user.id, itemName: "⚔️ Sword" });
-          // const shield = await Inventory.getCache({ userId: interaction.user.id, itemName: "🛡️ Shield" });
-          // const armor = await Inventory.getCache({ userId: interaction.user.id, itemName: "🥋 Armor" });
-          // const revival = await Inventory.getCache({ userId: interaction.user.id, itemName: "🍶 Revival" });
-          // const items = await Inventory.getCache([
-          //   { userId: interaction.user.id, itemName: "⚔️ Sword" },
-          //   { userId: interaction.user.id, itemName: "🛡️ Shield" },
-          //   { userId: interaction.user.id, itemName: "🥋 Armor" },
-          //   { userId: interaction.user.id, itemName: "🍶 Revival" },
-          // ]);
-
-          // // Destructuring hasil
-          // const [sword, shield, armor, revival] = items;
-          // const sword = await Inventory.findOne({ where: { userId: interaction.user.id, itemName: "⚔️ Sword" } });
-          // const shield = await Inventory.findOne({ where: { userId: interaction.user.id, itemName: "🛡️ Shield" } });
-          // const armor = await Inventory.findOne({ where: { userId: interaction.user.id, itemName: "🥋 Armor" } });
-          // const revival = await Inventory.findOne({ where: { userId: interaction.user.id, itemName: "🍶 Revival" } });
-          // Di handler battle
           const items = await Inventory.getCache([
-            { userId: interaction.user.id, itemName: "⚔️ Sword" },
-            { userId: interaction.user.id, itemName: "🛡️ Shield" },
-            { userId: interaction.user.id, itemName: "🥋 Armor" },
-            { userId: interaction.user.id, itemName: "🍶 Revival" },
+            { guildId: guildId, userId: userId, itemName: "⚔️ Sword" },
+            { guildId: guildId, userId: userId, itemName: "🛡️ Shield" },
+            { guildId: guildId, userId: userId, itemName: "🥋 Armor" },
+            { guildId: guildId, userId: userId, itemName: "🍶 Revival" },
           ]);
 
           // Handle item tidak ditemukan
@@ -161,7 +144,8 @@ module.exports = {
           if (user.hp <= 0) {
             if (revival) {
               revival.destroy();
-              await Inventory.clearCache({
+              Inventory.clearCache({
+                guildId: user.guildId,
                 userId: user.userId,
                 itemName: "🍶 Revival",
               });
@@ -209,7 +193,6 @@ module.exports = {
             user.monsterXpDrop = 0;
 
             // cek level up
-            // if (user.xp >= user.level * 50) {
             const XP_REQUIRED = 50 * Math.pow(2, user.level - 1);
             if (user.xp >= XP_REQUIRED) {
               user.level++;
@@ -281,9 +264,6 @@ module.exports = {
         case "shop": {
           await interaction.deferReply({ ephemeral: true });
           try {
-            // const user = await User.findOne({ where: { userId: interaction.user.id } });
-            const user = await User.getCache({ userId: interaction.user.id });
-
             if (!user) {
               return interaction.editReply({ content: "kamu belum memiliki akun gunakan `/adventure start` untuk membuat akun." });
             }
@@ -362,6 +342,7 @@ module.exports = {
                     await user.saveAndUpdateCache();
 
                     await Inventory.create({
+                      guildId: user.guildId,
                       userId: user.userId,
                       itemName: selectedItem.name,
                     });

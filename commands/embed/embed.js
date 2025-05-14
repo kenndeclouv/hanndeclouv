@@ -59,21 +59,24 @@ module.exports = {
 
               // Ambil data dari input
               const title = interaction.options.getString("title");
-              const description = interaction.options.getString("description");
+              let description = interaction.options.getString("description");
               const channel = interaction.options.getChannel("channel");
               const buttonsInput = interaction.options.getString("buttons");
               const color = interaction.options.getString("color") || "Blue";
 
+              // Replace karakter khusus dengan line break
+              description = description.replace(/\\n/g, "\n");
+
               // Parsing tombol
               const buttonsData = [];
-              const buttonEntries = buttonsInput.split(/,\s*/);
+              const buttonEntries = buttonsInput.split(/;\s*/);
 
               for (const entry of buttonEntries) {
-                const [label, roleId, style] = entry.split(";");
+                const [label, roleId, style] = entry.split("|");
 
                 // Validasi format
                 if (!label || !roleId || !style) {
-                  return interaction.editReply({ content: "❌ Format tombol salah! Gunakan: `Label;RoleID;Style`" });
+                  return interaction.editReply({ content: "❌ Format tombol salah! Gunakan: `Label|RoleID|Style`" });
                 }
 
                 // Validasi style
@@ -175,12 +178,14 @@ module.exports = {
               }
 
               const title = interaction.options.getString("title");
-              const description = interaction.options.getString("description");
+              let description = interaction.options.getString("description");
               const channel = interaction.options.getChannel("channel");
               const buttonsInput = interaction.options.getString("buttons") || null;
               const fieldsInput = interaction.options.getString("fields") || null;
               const image = interaction.options.getString("image") || null;
               const color = interaction.options.getString("color") || "Blue";
+
+              description = description.replace(/\\n/g, "\n");
 
               // Validasi image (jika ada)
               if (image) {
@@ -195,9 +200,9 @@ module.exports = {
 
               // Cek validitas link pada tombol (jika ada)
               if (buttonsInput) {
-                const buttonEntries = buttonsInput.split(/,\s*/);
+                const buttonEntries = buttonsInput.split(/;\s*/);
                 for (const entry of buttonEntries) {
-                  const [label, link] = entry.split(";");
+                  const [label, link] = entry.split("|");
                   if (link && !/^https?:\/\/\S+$/i.test(link)) {
                     return interaction.editReply({ content: "❌ Link tombol tidak valid! Pastikan menggunakan format URL yang benar (harus diawali http:// atau https://)" });
                   }
@@ -206,10 +211,10 @@ module.exports = {
 
               const buttonsData = [];
               if (buttonsInput) {
-                const buttonEntries = buttonsInput.split(/,\s*/);
+                const buttonEntries = buttonsInput.split(/;\s*/);
 
                 for (const entry of buttonEntries) {
-                  const [label, link] = entry.split(";");
+                  const [label, link] = entry.split("|");
 
                   if (!label || !link) {
                     return interaction.editReply({ content: "❌ Format tombol salah! Gunakan: `Label;Link`" });
@@ -226,13 +231,13 @@ module.exports = {
               // Parsing fields
               const fieldsData = [];
               if (fieldsInput) {
-                const fieldEntries = fieldsInput.split(/,\s*/);
+                const fieldEntries = fieldsInput.split(/;\s*/);
 
                 for (const entry of fieldEntries) {
-                  const [name, value] = entry.split(";");
+                  const [name, value] = entry.split("|");
 
                   if (!name || !value) {
-                    return interaction.editReply({ content: "❌ Format fields salah! Gunakan: `Judul;Isi`, pisahkan pakai koma" });
+                    return interaction.editReply({ content: "❌ Format fields salah! Gunakan: `Judul|Isi`, pisahkan pakai koma" });
                   }
 
                   fieldsData.push({

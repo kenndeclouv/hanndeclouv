@@ -5,7 +5,44 @@ const BotSetting = require("../database/models/BotSetting");
 const Ticket = require("../database/models/Ticket");
 const User = require("../database/models/User");
 const axios = require("axios");
+const path = require("path");
 require("dotenv").config();
+const fs = require("fs");
+
+// Initialize langs object to store language data
+const langs = {};
+
+// Automatically load all language files from the lang directory
+try {
+  const langDir = path.join(__dirname, "../lang");
+  if (fs.existsSync(langDir)) {
+    fs.readdirSync(langDir)
+      .filter((file) => file.endsWith(".json") || file.endsWith(".js"))
+      .forEach((file) => {
+        const lang = file.split(".")[0];
+        try {
+          langs[lang] = require(`../lang/${file}`);
+        } catch (err) {
+          console.error(`Error loading language file ${file}:`, err);
+        }
+      });
+  } else {
+    console.warn("Language directory not found at:", langDir);
+  }
+} catch (err) {
+  console.error("Error loading language files:", err);
+}
+
+function t(key, lang = "en", vars = {}) {
+  // Default to English if requested language doesn't exist
+  let text = langs[lang]?.[key] || langs["en"]?.[key] || key;
+
+  // Replace all variables in the text
+  for (const [k, v] of Object.entries(vars)) {
+    text = text.replace(new RegExp(`{${k}}`, "g"), v);
+  }
+  return text;
+}
 
 function checkCooldown(lastTime, cooldownInSeconds) {
   const now = Date.now();
@@ -145,7 +182,7 @@ async function updateMemberCounters(guild, setting) {
 const levelUpXp = (level) => level * level * 50;
 
 // fungsi buat nambah xp
-const addXp = async (userId, xpToAdd, message, channel) => {
+const addXp = async (guildId, userId, xpToAdd, message, channel) => {
   if (!channel) {
     // coba fetch ulang setting
     const setting = await BotSetting.getCache({ guildId: message.guild.id });
@@ -153,10 +190,10 @@ const addXp = async (userId, xpToAdd, message, channel) => {
       channel = message.guild.channels.cache.get(setting.levelingChannelId) || null;
     }
   }
-  let user = await User.getCache("userId", userId);
+  let user = await User.getCache({ userId: userId, guildId: guildId });
 
   if (!user) {
-    user = await User.create({ userId, xp: 0, level: 1 });
+    user = await User.create({ guildId, userId, xp: 0, level: 1 });
   }
 
   user.xp += xpToAdd;
@@ -172,7 +209,7 @@ const addXp = async (userId, xpToAdd, message, channel) => {
 
   // update user di database
   await user.update({ xp: user.xp, level: user.level });
-
+  await user.saveAndUpdateCache();
   // kalo ga naik level, udahan
   if (!leveledUp) return;
 
@@ -238,21 +275,26 @@ const calculateLevel = (xp) => {
   return level;
 };
 
-async function fixPrefix(guild) {
+async function rolePrefix(guild) {
   try {
     await guild.members.fetch({ time: 10000 });
   } catch (err) {
     console.warn("❌ gagal fetch semua member (mungkin timeout), lanjut pakai cache aja");
   }
 
+  const prefixPattern = /^[\[\(（【「].+?[\]\)）】」]/;
+
   const prefixRoles = guild.roles.cache
-    .filter((role) => /^\[.+?\]/.test(role.name))
+    .filter((role) => prefixPattern.test(role.name))
     .sort((a, b) => b.position - a.position)
-    .map((role) => ({
-      roleId: role.id,
-      prefix: role.name.match(/^\[(.+?)\]/)[0],
-      position: role.position,
-    }));
+    .map((role) => {
+      const match = role.name.match(prefixPattern);
+      return {
+        roleId: role.id,
+        prefix: match ? match[0] : "",
+        position: role.position,
+      };
+    });
 
   let updated = 0;
 
@@ -266,12 +308,48 @@ async function fixPrefix(guild) {
     if (!matching) continue;
 
     const currentNick = member.nickname || member.user.username;
-    const baseName = currentNick.replace(/^\[.+?\]\s?/, "");
+    const baseName = currentNick.replace(prefixPattern, "").trimStart();
     const newNick = `${matching.prefix} ${baseName}`;
 
     if (currentNick !== newNick) {
       try {
         await member.setNickname(newNick);
+        updated++;
+      } catch (err) {
+        console.warn(`❌ gagal ubah nick ${member.user.tag}: ${err.message}`);
+      }
+    }
+  }
+
+  return updated;
+}
+
+async function roleUnprefix(guild) {
+  try {
+    await guild.members.fetch({ time: 10000 });
+  } catch (err) {
+    console.warn("❌ gagal fetch semua member (mungkin timeout), lanjut pakai cache aja");
+  }
+
+  const prefixPattern = /^[\[\(（【「].+?[\]\)）】」]\s?/;
+
+  let updated = 0;
+
+  for (const member of guild.members.cache.values()) {
+    if (!member.manageable) {
+      console.log("Member tidak bisa diatur :" + (member.nickname || member.user.username));
+      continue;
+    }
+
+    const currentNick = member.nickname;
+    if (!currentNick || !prefixPattern.test(currentNick)) continue;
+
+    const baseName = currentNick.replace(prefixPattern, "");
+
+    // cuma ubah kalau beda
+    if (currentNick !== baseName) {
+      try {
+        await member.setNickname(baseName);
         updated++;
       } catch (err) {
         console.warn(`❌ gagal ubah nick ${member.user.tag}: ${err.message}`);
@@ -553,6 +631,7 @@ async function createTicket(interaction, ticketConfig) {
 }
 
 module.exports = {
+  t,
   checkCooldown,
   checkPermission,
   parseDuration,
@@ -562,7 +641,8 @@ module.exports = {
   addXp,
   levelUpXp,
   calculateLevel,
-  fixPrefix,
+  rolePrefix,
+  roleUnprefix,
   updateStats,
   updateMinecraftStats,
   createTicketTranscript,

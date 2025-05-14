@@ -44,12 +44,12 @@
 ---
 
 
-## /fixprefix
+## /roleprefix
 
 **Deskripsi:** Menambahkan prefix role tertinggi ke nickname member.
 
 ### Usage:
-`/fixprefix`
+`/roleprefix`
 
 ---
 

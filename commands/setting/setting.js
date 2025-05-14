@@ -115,8 +115,8 @@ const builder = new SlashCommandBuilder()
       )
       .addSubcommand((sub) =>
         sub
-          .setName("squad")
-          .setDescription("Aktif/nonaktif fitur squad")
+          .setName("clan")
+          .setDescription("Aktif/nonaktif fitur clan")
           .addStringOption((opt) => opt.setName("status").setDescription("Aktifkan/nonaktifkan").setRequired(true).addChoices({ name: "Aktifkan", value: "enable" }, { name: "Nonaktifkan", value: "disable" }))
       )
       .addSubcommand((sub) =>
@@ -316,32 +316,6 @@ const builder = new SlashCommandBuilder()
           .addRoleOption((opt) => opt.setName("role").setDescription("Role yang akan diberikan").setRequired(true))
       )
   )
-
-  // BOT APPARANCE
-  .addSubcommandGroup((group) =>
-    group
-      .setName("appearance")
-      .setDescription("Pengaturan tampilan bot")
-      .addSubcommand((sub) =>
-        sub
-          .setName("activity")
-          .setDescription("Ubah aktifitas bot")
-          .addStringOption((opt) =>
-            opt
-              .setName("activity")
-              .setDescription("Aktifitas bot")
-              .setRequired(true)
-              .addChoices({ name: "Online", value: "online" }, { name: "Do Not Disturb", value: "dnd" }, { name: "Offline", value: "offline" }, { name: "Idle", value: "idle" })
-          )
-      )
-      .addSubcommand((sub) =>
-        sub
-          .setName("status")
-          .setDescription("Ubah status/deskripsi bot")
-          .addStringOption((opt) => opt.setName("status").setDescription("Deskripsi aktivitas bot").setRequired(true))
-      )
-  )
-
   // Minecraft server pengaturan: ip, port, ip-channel, port-channel, status-channel
   .addSubcommandGroup((group) =>
     group
@@ -385,7 +359,20 @@ const builder = new SlashCommandBuilder()
           .addChannelOption((opt) => opt.setName("channel").setDescription("Channel untuk status Minecraft").setRequired(true))
       )
   )
+  // LANGUAGE
+  // .addSubcommandGroup((group) =>
+  //   group
+  //     .setName("language")
+  //     .setDescription("Language settings")
+  //     .addSubcommand((sub) =>
+  //       sub
+  //         .setName("set")
+  //         .setDescription("Set bot language")
+  //         .addStringOption((opt) => opt.setName("lang").setDescription("Choose language").setRequired(true).addChoices({ name: "Indonesia", value: "id" }, { name: "English", value: "en" }))
+  //     )
+  // )
   // STANDALONE
+  .addSubcommand((sub) => sub.setName("language").setDescription("⚙️ Language settings"))
   .addSubcommand((sub) => sub.setName("view").setDescription("Lihat semua pengaturan bot"));
 
 module.exports = {
@@ -701,7 +688,7 @@ module.exports = {
             case "ticket":
             case "pet":
             case "adventure":
-            case "squad":
+            case "clan":
             case "leveling":
             case "welcome-in":
             case "nsfw":
@@ -720,7 +707,7 @@ module.exports = {
                 suggestion: ["suggestionOn", "suggestion"],
                 ticket: ["ticketOn", "ticket"],
                 pet: ["petOn", "pet"],
-                squad: ["squadOn", "squad"],
+                clan: ["clanOn", "clan"],
                 adventure: ["adventureOn", "adventure"],
                 leveling: ["levelingOn", "leveling"],
                 "welcome-in": ["welcomeInOn", "welcome in"],
@@ -825,26 +812,6 @@ module.exports = {
             }
           }
         }
-        case "appearance": {
-          switch (sub) {
-            case "activity": {
-              const activity = interaction.options.getString("activity");
-              botSetting.botActivity = activity;
-              await botSetting.saveAndUpdateCache("guildId");
-
-              embed.setDescription(`Status aktivitas bot berhasil diubah menjadi \`${activity}\`!`);
-              return interaction.editReply({ embeds: [embed] });
-            }
-            case "status": {
-              const status = interaction.options.getString("status");
-              botSetting.botStatus = status;
-              await botSetting.saveAndUpdateCache("guildId");
-
-              embed.setDescription(`Status deskripsi bot berhasil diubah menjadi \`${status}\`!`);
-              return interaction.editReply({ embeds: [embed] });
-            }
-          }
-        }
         case "leveling": {
           switch (sub) {
             case "channel": {
@@ -907,7 +874,6 @@ module.exports = {
             }
           }
         }
-        // Minecraft server pengaturan
         case "minecraft": {
           switch (sub) {
             case "setup": {
@@ -999,6 +965,17 @@ module.exports = {
             }
           }
         }
+        case "language": {
+          switch (sub) {
+            case "set": {
+              const lang = interaction.options.getString("lang");
+              botSetting.lang = lang;
+              await botSetting.saveAndUpdateCache("guildId");
+              embed.setDescription(`✅ Bot language has been set to \`${lang}\`!`);
+              return interaction.editReply({ embeds: [embed] });
+            }
+          }
+        }
 
         default: {
           if (!botSetting || !botSetting.dataValues) {
@@ -1038,7 +1015,14 @@ module.exports = {
                 kategori.array.push(`• ${formattedKey}:\n${list}`);
               }
             } else if (typeof value === "string" || typeof value === "number") {
-              kategori.umum.push(`• ${formattedKey}: ${value}`);
+              // Cek jika key mengandung "ChannelId" dan value ada (tidak null/undefined/empty)
+              if (key.toLowerCase().includes("channelid") || key.toLowerCase().includes("forumid") || (key.toLowerCase().includes("categoryid") && value)) {
+                kategori.umum.push(`• ${formattedKey}: <#${value}>`);
+              } else if (key.toLowerCase().includes("roleid")) {
+                kategori.umum.push(`• ${formattedKey}: <@&${value}>`);
+              } else {
+                kategori.umum.push(`• ${formattedKey}: ${value}`);
+              }
             } else {
               kategori.lainnya.push(`• ${formattedKey}: ⚠️ tidak dikenali`);
             }
@@ -1061,7 +1045,7 @@ module.exports = {
           }
 
           embed.setTitle("📋 pengaturan bot").setColor("Blue").setDescription(description).setTimestamp().setFooter({
-            text: "semua pengaturan diambil dari database cache",
+            text: "Pengaturan bot di server ini",
             iconURL: interaction.client.user.displayAvatarURL(),
           });
 

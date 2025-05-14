@@ -24,6 +24,14 @@ module.exports = {
     const action = interaction.options.getString("action");
     const member = await interaction.guild.members.fetch(user.id);
 
+    // tambahkan sebelum add/remove role
+    if (interaction.guild.members.me.roles.highest.position <= role.position) {
+      return interaction.editReply({
+        content: `❌ | Aku gak bisa mengatur role **${role.name}** karena role itu lebih tinggi atau setara denganku 😭`,
+        ephemeral: true,
+      });
+    }
+
     // Check if the command issuer has permission to manage roles
     if (!interaction.member.permissions.has("MANAGE_ROLES")) {
       const embed = new EmbedBuilder().setColor("Red").setDescription("Kamu tidak memiliki izin untuk mengelola role.");

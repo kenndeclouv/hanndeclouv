@@ -45,11 +45,11 @@ module.exports = {
       switch (subcommand) {
         case "profile": {
           // Mencari data user berdasarkan ID
-          let user = await User.findOne({ where: { userId: interaction.user.id } });
+          let user = await User.getCache({ userId: interaction.user.id, guildId: interaction.guild.id });
 
           // Jika tidak ada data user, beri tahu bahwa profil belum ada
           if (!user) {
-            user = await User.create({ userId: interaction.user.id });
+            user = await User.create({ userId: interaction.user.id, guildId: interaction.guild.id });
             return interaction.editReply({
               content: "Kamu belum memiliki profil level, membuatkan untuk kamu..",
             });
@@ -98,7 +98,7 @@ module.exports = {
           break; // Added break statement
         }
         case "add": {
-          const user = await User.findOne({ where: { userId: interaction.options.getUser("user").id } });
+          const user = await User.getCache({ userId: interaction.options.getUser("user").id, guildId: interaction.guild.id });
           if (!user) {
             return interaction.editReply({ content: "Pengguna tidak ditemukan." });
           }
@@ -121,7 +121,7 @@ module.exports = {
           return interaction.editReply({ embeds: [embed] });
         }
         case "set": {
-          const user = await User.findOne({ where: { userId: interaction.options.getUser("user").id } });
+          const user = await User.getCache({ userId: interaction.options.getUser("user").id, guildId: interaction.guild.id });
           if (!user) {
             return interaction.editReply({ content: "Pengguna tidak ditemukan." });
           }
@@ -140,7 +140,7 @@ module.exports = {
           return interaction.editReply({ embeds: [embed] });
         }
         case "xp-add": {
-          const user = await User.findOne({ where: { userId: interaction.options.getUser("user").id } });
+          const user = await User.getCache({ userId: interaction.options.getUser("user").id, guildId: interaction.guild.id });
           if (!user) {
             return interaction.editReply({ content: "Pengguna tidak ditemukan." });
           }
@@ -161,7 +161,7 @@ module.exports = {
           return interaction.editReply({ embeds: [embed] });
         }
         case "xp-set": {
-          const user = await User.findOne({ where: { userId: interaction.options.getUser("user").id } });
+          const user = await User.getCache({ userId: interaction.options.getUser("user").id, guildId: interaction.guild.id });
           if (!user) {
             return interaction.editReply({ content: "Pengguna tidak ditemukan." });
           }

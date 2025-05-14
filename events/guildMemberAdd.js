@@ -1,6 +1,6 @@
 const { EmbedBuilder, Events, WebhookClient } = require("discord.js");
 const BotSetting = require("../database/models/BotSetting");
-const { fixPrefix } = require("../helpers");
+const { rolePrefix } = require("../helpers");
 const Invite = require("../database/models/Invite");
 const User = require("../database/models/User");
 require("dotenv").config();
@@ -15,7 +15,7 @@ module.exports = {
     // buat akun untuk user
     let user = await User.findOne({ where: { userId: member.user.id } });
     if (!user) {
-      user = await User.create({ userId: member.user.id });
+      user = await User.create({ userId: member.user.id, guildId: member.guild.id });
     }
     const guild = member.guild;
     const guildId = guild.id;
@@ -74,7 +74,9 @@ module.exports = {
       }
     }
     // ======== fix prefix member ========
-    await fixPrefix(member.guild);
+    if (setting.rolePrefixOn) {
+      await rolePrefix(member.guild);
+    }
     // ======== buat embed welcome ========
     const welcomeEmbed = new EmbedBuilder()
       .setColor("#f7f7f7")

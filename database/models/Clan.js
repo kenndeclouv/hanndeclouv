@@ -2,7 +2,7 @@ const { DataTypes } = require("sequelize");
 const sequelize = require("../sequelize");
 const CacheableModel = require("../modelCache");
 
-class Squad extends CacheableModel {
+class Clan extends CacheableModel {
   static init(sequelize) {
     super.init(
       {
@@ -13,6 +13,7 @@ class Squad extends CacheableModel {
         color: { type: DataTypes.STRING, allowNull: false },
         ownerId: { type: DataTypes.STRING, allowNull: false },
         roleId: { type: DataTypes.STRING, allowNull: false },
+        logoUrl: { type: DataTypes.STRING, allowNull: true },
         rules: { type: DataTypes.STRING, allowNull: true },
         isVerified: { type: DataTypes.BOOLEAN, defaultValue: false },
         channelId: { type: DataTypes.STRING, allowNull: true },
@@ -22,14 +23,14 @@ class Squad extends CacheableModel {
       },
       {
         sequelize,
-        modelName: "Squad",
-        tableName: "squads",
+        modelName: "Clan",
+        tableName: "clans",
         timestamps: false,
       }
     );
   }
 }
 
-Squad.init(sequelize);
+Clan.init(sequelize);
 
-module.exports = Squad;
+module.exports = Clan;

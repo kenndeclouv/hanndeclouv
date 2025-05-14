@@ -6,6 +6,7 @@ class Inventory extends CacheableModel {
   static init(sequelize) {
     return super.init(
       {
+        guildId: { type: DataTypes.STRING, allowNull: false },
         userId: { type: DataTypes.STRING, allowNull: false },
         itemName: { type: DataTypes.STRING, allowNull: false },
       },

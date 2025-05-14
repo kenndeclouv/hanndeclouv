@@ -7,7 +7,7 @@ module.exports = {
   async execute(interaction) {
     await interaction.deferReply({ ephemeral: true });
     try {
-      const user = await User.findOne({ where: { userId: interaction.user.id } });
+      const user = await User.getCache({ userId: interaction.user.id });
       if (!user) {
         return interaction.editReply({ content: "kamu belum memiliki akun gunakan `/account create` untuk membuat akun." });
       }
@@ -20,7 +20,12 @@ module.exports = {
         { name: "🖥️ Desktop", price: 2000, description: "Desktop untuk meningkatkan kemungkinan berhasil hack." },
       ];
 
-      const embed = new EmbedBuilder().setColor("Blue").setTitle("> Toko").setDescription("Selamat datang di toko! Pilih item yang ingin kamu beli:").setTimestamp().setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+      const embed = new EmbedBuilder()
+        .setColor("Blue")
+        .setTitle("> Toko")
+        .setDescription("Selamat datang di toko! Pilih item yang ingin kamu beli:")
+        .setTimestamp()
+        .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
 
       items.forEach((item) => {
         embed.addFields({ name: `${item.name}`, value: `Harga: **${item.price}** uang\n${item.description}`, inline: true });
@@ -60,7 +65,10 @@ module.exports = {
             return;
           }
 
-          const confirmRow = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("confirm_purchase").setLabel("Konfirmasi Pembelian").setStyle(ButtonStyle.Success), new ButtonBuilder().setCustomId("cancel_purchase").setLabel("Batal").setStyle(ButtonStyle.Danger));
+          const confirmRow = new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId("confirm_purchase").setLabel("Konfirmasi Pembelian").setStyle(ButtonStyle.Success),
+            new ButtonBuilder().setCustomId("cancel_purchase").setLabel("Batal").setStyle(ButtonStyle.Danger)
+          );
 
           await interaction.editReply({
             content: `kamu akan membeli **${selectedItem.name}** seharga **${selectedItem.price} uang**. Konfirmasi pembelian?`,
@@ -78,6 +86,7 @@ module.exports = {
               await user.save();
 
               await Inventory.create({
+                guildId: user.guildId,
                 userId: user.userId,
                 itemName: selectedItem.name,
               });
