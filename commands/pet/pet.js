@@ -5,6 +5,8 @@ const Inventory = require("../../database/models/Inventory");
 const User = require("../../database/models/User");
 require("dotenv").config();
 const { Op } = require("sequelize");
+const BotSetting = require("../../database/models/BotSetting");
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("pet")
@@ -52,8 +54,17 @@ module.exports = {
         .addStringOption((option) => option.setName("name").setDescription("Nama pet baru").setRequired(true))
     ),
   async execute(interaction) {
-    const subcommand = interaction.options.getSubcommand();
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
     await interaction.deferReply({ ephemeral: true });
+    const subcommand = interaction.options.getSubcommand();
+    let guildId = interaction.guild.id;
+    let setting = await BotSetting.getCache({ guildId: guildId });
+
     try {
       // add pet
       if (subcommand === "add") {
@@ -242,7 +253,7 @@ module.exports = {
         const userId = interaction.user.id;
         const user = await User.findOne({ where: { userId } });
         const userPet = await UserPet.findOne({ where: { userId }, include: { model: Pet, as: "pet" } });
-        const cooldown = checkCooldown(userPet.lastUse, process.env.PET_COOLDOWN);
+        const cooldown = checkCooldown(userPet.lastUse, setting.petCooldown);
         if (cooldown.remaining) {
           return interaction.editReply({ content: `🕒 | kamu dapat menggunakan pet lagi dalam **${cooldown.time}**!` });
         }
@@ -290,7 +301,7 @@ module.exports = {
           return interaction.editReply({ content: "❌ Kamu belum memiliki pet untuk digacha!" });
         }
 
-        const cooldown = checkCooldown(userPet.lastGacha, process.env.GACHA_COOLDOWN);
+        const cooldown = checkCooldown(userPet.lastGacha, setting.petGachaCooldown);
         if (cooldown.remaining) {
           return interaction.editReply({ content: `🕒 | kamu dapat menggacha pet lagi dalam **${cooldown.time}**!` });
         }
@@ -414,12 +425,7 @@ module.exports = {
       // Send DM to owner about the error
       const webhookClient = new WebhookClient({ url: process.env.WEBHOOK_ERROR_LOGS });
 
-      const errorEmbed = new EmbedBuilder()
-        .setColor("Red")
-        .setTitle(`> ❌ Error command /pet`)
-        .setDescription(`\`\`\`${error}\`\`\``)
-        .setFooter(`Error dari server ${interaction.guild.name}`)
-        .setTimestamp();
+      const errorEmbed = new EmbedBuilder().setColor("Red").setTitle(`> ❌ Error command /pet`).setDescription(`\`\`\`${error}\`\`\``).setFooter(`Error dari server ${interaction.guild.name}`).setTimestamp();
 
       // Kirim ke webhook
       webhookClient

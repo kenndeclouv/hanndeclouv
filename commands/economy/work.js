@@ -1,13 +1,19 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const User = require("../../database/models/User");
 require("dotenv").config();
-const{ checkCooldown }= require("../../helpers");
-const Inventory = require("../../database/models/Inventory"); 
+const { checkCooldown } = require("../../helpers");
+const Inventory = require("../../database/models/Inventory");
 
 module.exports = {
   data: new SlashCommandBuilder().setName("work").setDescription("Bekerja untuk mendapatkan uang."),
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
+    await interaction.deferReply();
     try {
       let user = await User.findOne({
         where: { userId: interaction.user.id },
@@ -51,7 +57,11 @@ module.exports = {
         .setColor(payTax ? "Yellow" : "Green")
         .setTitle("> Hasil Bekerja")
         .setThumbnail(interaction.user.displayAvatarURL())
-        .setDescription(`${interaction.user.username} bekerja keras dan mendapatkan **${randomCash} uang**!${payTax ? ` tapi harus membayar pajak sebesar **${taxAmount} uang**.` : ""}${workedMaximally ? ` dan level karir kamu naik **${user.careerMastered}**!` : ""}`)
+        .setDescription(
+          `${interaction.user.username} bekerja keras dan mendapatkan **${randomCash} uang**!${payTax ? ` tapi harus membayar pajak sebesar **${taxAmount} uang**.` : ""}${
+            workedMaximally ? ` dan level karir kamu naik **${user.careerMastered}**!` : ""
+          }`
+        )
         .setTimestamp()
         .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
       await interaction.editReply({ embeds: [embed] });

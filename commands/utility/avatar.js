@@ -14,7 +14,13 @@ module.exports = {
     .setDescription("🖼️ User's avatar")
     .addUserOption((option) => option.setName("user").setDescription("User ").setRequired(false)),
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
+    await interaction.deferReply();
     try {
       const lang = await getLang(interaction.guildId);
 

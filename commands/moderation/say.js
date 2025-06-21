@@ -7,6 +7,12 @@ module.exports = {
     .addStringOption((option) => option.setName("message").setDescription("Pesan untuk dikirim").setRequired(true)),
   adminOnly: true,
   async execute(interaction) {
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
     await interaction.deferReply({ ephemeral: true });
     if (!(await checkPermission(interaction.member))) {
       return interaction.editReply({

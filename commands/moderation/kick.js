@@ -6,9 +6,18 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("kick")
     .setDescription("Kick user dari server.")
-    .addUserOption((option) => option.setName("user").setDescription("User untuk dikick").setRequired(true)),
+    .addUserOption((option) => option.setName("user").setDescription("User untuk dikick").setRequired(true))
+    .addStringOption((option) => option.setName("reason").setDescription("Alasan kick (opsional)").setRequired(false)),
   adminOnly: true,
   async execute(interaction) {
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
+    await interaction.deferReply();
+
     if (!(await checkPermission(interaction.member))) {
       return interaction.editReply({
         content: "❌ Kamu tidak punya izin untuk menggunakan perintah ini.",
@@ -17,22 +26,28 @@ module.exports = {
     }
     const setting = BotSetting.getCache({ guildId: interaction.guild.id });
     const user = interaction.options.getUser("user");
+    const reason = interaction.options.getString("reason") || "Member dikeluarkan oleh command.";
 
     if (!interaction.member.permissions.has("KICK_MEMBERS")) {
       return interaction.reply({ content: "Kamu tidak memiliki izin untuk mengeluarkan member.", ephemeral: true });
     }
 
-    const member = await interaction.guild.members.fetch(user.id);
+    let member;
+    try {
+      member = await interaction.guild.members.fetch(user.id);
+    } catch (e) {
+      member = null;
+    }
 
     if (member) {
-      await member.kick("Member dikeluarkan oleh command.");
+      await member.kick(reason);
       if (setting.modLogChannelId) {
         const modLogChannel = interaction.guild.channels.cache.get(setting.modLogChannelId);
         if (modLogChannel) {
           const modLogEmbed = new EmbedBuilder()
             .setColor("Red")
             .setTitle("> Mod Log: Member Kicked")
-            .setDescription(`**Member:** ${user.tag}\n**Kicked by:** ${interaction.user.tag}`)
+            .setDescription(`**Member:** ${user.tag}\n**Kicked by:** ${interaction.user.tag}\n**Reason:** ${reason}`)
             .setThumbnail(user.displayAvatarURL())
             .setTimestamp()
             .setFooter({
@@ -46,7 +61,7 @@ module.exports = {
       const embed = new EmbedBuilder()
         .setColor("Red")
         .setTitle("> Member dikeluarkan")
-        .setDescription(`**${user.tag}** telah dikeluarkan dari server oleh **${interaction.user.tag}** melalui command.`)
+        .setDescription(`**${user.tag}** telah dikeluarkan dari server oleh **${interaction.user.tag}** melalui command.\n**Alasan:** ${reason}`)
         .setThumbnail(interaction.client.user.displayAvatarURL())
         .setTimestamp()
         .setFooter({ text: `Dikeluarkan oleh ${interaction.user.tag}`, iconURL: interaction.user.displayAvatarURL() });

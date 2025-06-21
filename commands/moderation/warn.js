@@ -11,6 +11,12 @@ module.exports = {
     .addUserOption((option) => option.setName("user").setDescription("User untuk diberi peringatan").setRequired(true))
     .addStringOption((option) => option.setName("reason").setDescription("Alasan").setRequired(true)),
   async execute(interaction) {
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
     await interaction.deferReply({ ephemeral: true });
 
     try {

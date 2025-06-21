@@ -54,7 +54,6 @@ module.exports = {
         .setDescription("Transfer kepemilikan suatu clan")
         .addStringOption((option) => option.setName("clan").setDescription("Nama clan yang ingin dihapus").setRequired(true).setAutocomplete(true))
         .addMentionableOption((option) => option.setName("owner").setDescription("Ketua atau owner clan").setRequired(true))
-
     )
     .addSubcommand((subcommand) => subcommand.setName("list").setDescription("List semua clan.")),
 
@@ -72,6 +71,12 @@ module.exports = {
   },
 
   async execute(interaction) {
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
     await interaction.deferReply();
     try {
       const subcommand = interaction.options.getSubcommand();
@@ -101,7 +106,7 @@ module.exports = {
           }
 
           // Cek apakah user sudah punya role clan lain
-          const member = await interaction.guild.members.fetch(interaction.user.id);
+          const member = await interaction.guild.members.fetch(owner.id);
           const allClans = await Clan.findAll({ where: { guildId } });
           const clanRoleIds = allClans.map((s) => s.roleId);
           const userClanRoles = member.roles.cache.filter((r) => clanRoleIds.includes(r.id));
@@ -110,15 +115,59 @@ module.exports = {
             return;
           }
 
+          // // Cek apakah role sudah ada
+          // let role = interaction.guild.roles.cache.find((r) => r.name === name);
+          // if (!role) {
+          //   try {
+          //     // role = await interaction.guild.roles.create({
+          //     //   name: `[${emoji}] ${name}`,
+          //     //   color: color,
+          //     //   mentionable: true,
+          //     //   hoist: true,
+          //     //   reason: `Clan role created by ${interaction.user.tag}`,
+          //     // });
+          //     // cari role clan terakhir yang udah dibuat (yang namanya diawali dengan '[')
+          //     const clanRoles = interaction.guild.roles.cache
+          //       .filter((r) => r.name.startsWith("[")) // filter role clan
+          //       .sort((a, b) => b.position - a.position); // urut dari atas ke bawah
+
+          //     const lastClanRole = clanRoles.first(); // role clan tertinggi
+
+          //     role = await interaction.guild.roles.create({
+          //       name: `[${emoji}] ${name}`,
+          //       color: color,
+          //       mentionable: true,
+          //       hoist: true,
+          //       reason: `Clan role created by ${interaction.user.tag}`,
+          //       position: lastClanRole ? lastClanRole.position - 1 : 0, // kalo belum ada clan, taro paling bawah
+          //     });
+          //   } catch (err) {
+          //     console.error(err);
+          //     return interaction.editReply("❌ Gagal membuat role clan. Pastikan bot punya izin MANAGE_ROLES dan warna valid!");
+          //   }
+          // }
+          // Nama final role
+          const roleName = `[${emoji}] ${name}`;
+
           // Cek apakah role sudah ada
-          let role = interaction.guild.roles.cache.find((r) => r.name === name);
+          let role = interaction.guild.roles.cache.find((r) => r.name === roleName);
+
           if (!role) {
             try {
+              // cari role clan terakhir yang udah dibuat (yang namanya diawali dengan '[')
+              const clanRoles = interaction.guild.roles.cache
+                .filter((r) => r.name.startsWith("[")) // filter role clan
+                .sort((a, b) => b.position - a.position); // urut dari atas ke bawah
+
+              const lastClanRole = clanRoles.first(); // role clan tertinggi
+
               role = await interaction.guild.roles.create({
-                name: `[${emoji}] ${name}`,
+                name: roleName,
                 color: color,
                 mentionable: true,
+                hoist: true,
                 reason: `Clan role created by ${interaction.user.tag}`,
+                position: lastClanRole ? lastClanRole.position - 1 : 0, // kalo belum ada clan, taro paling bawah
               });
             } catch (err) {
               console.error(err);
@@ -621,6 +670,12 @@ module.exports = {
           const name = interaction.options.getString("clan");
           const guildId = interaction.guild.id;
 
+          // Cari clan berdasarkan nama dan guild
+          const clan = await Clan.findOne({ where: { name, guildId } });
+          if (!clan) {
+            return await interaction.editReply("❌ Clan tidak ditemukan.");
+          }
+
           // Hanya owner clan atau admin yang bisa hapus
           const isOwner = clan.ownerId === interaction.user.id;
           const member = await interaction.guild.members.fetch(interaction.user.id);
@@ -628,12 +683,6 @@ module.exports = {
           if (!isOwner && !isAdmin) {
             return await interaction.editReply("❌ Hanya owner clan atau admin yang bisa menghapus clan ini.");
           }
-          // Cari clan berdasarkan nama dan guild
-          const clan = await Clan.findOne({ where: { name, guildId } });
-          if (!clan) {
-            return await interaction.editReply("❌ Clan tidak ditemukan.");
-          }
-
           // Hapus role clan jika ada
           try {
             const role = interaction.guild.roles.cache.get(clan.roleId);

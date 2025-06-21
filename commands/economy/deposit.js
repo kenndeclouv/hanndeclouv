@@ -5,12 +5,20 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("deposit")
     .setDescription("Simpan uang tunai kamu ke bank.")
-    .addStringOption((option) => option.setName("type").setDescription("Pilih jenis setor: semua atau sebagian").setRequired(true).addChoices({ name: "Setor Semua", value: "all" }, { name: "Setor Sebagian", value: "partial" }))
+    .addStringOption((option) =>
+      option.setName("type").setDescription("Pilih jenis setor: semua atau sebagian").setRequired(true).addChoices({ name: "Setor Semua", value: "all" }, { name: "Setor Sebagian", value: "partial" })
+    )
     .addIntegerOption(
       (option) => option.setName("amount").setDescription("Jumlah untuk menyimpan").setRequired(false).setMinValue(1) // buat batas minimum jumlah setor
     ),
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
+    await interaction.deferReply();
     try {
       const type = interaction.options.getString("type");
       let amount = interaction.options.getInteger("amount");
@@ -36,7 +44,13 @@ module.exports = {
       user.bank += amount;
       await user.save();
 
-      const embed = new EmbedBuilder().setColor("Green").setTitle("> Hasil Menyimpan Uang").setThumbnail(interaction.user.displayAvatarURL()).setDescription(`Kamu menyimpan **${amount} uang** ke bank!`).setTimestamp().setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+      const embed = new EmbedBuilder()
+        .setColor("Green")
+        .setTitle("> Hasil Menyimpan Uang")
+        .setThumbnail(interaction.user.displayAvatarURL())
+        .setDescription(`Kamu menyimpan **${amount} uang** ke bank!`)
+        .setTimestamp()
+        .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
 
       return interaction.editReply({ embeds: [embed] });
     } catch (error) {
@@ -45,4 +59,3 @@ module.exports = {
     }
   },
 };
-

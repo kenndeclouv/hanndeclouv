@@ -11,6 +11,12 @@ module.exports = {
   adminOnly: true,
 
   async execute(interaction) {
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
     try {
       await interaction.deferReply({ ephemeral: true });
 

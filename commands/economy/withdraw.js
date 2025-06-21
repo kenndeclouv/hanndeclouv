@@ -7,7 +7,13 @@ module.exports = {
     .setDescription("Tarik uang tunai kamu dari bank.")
     .addIntegerOption((option) => option.setName("amount").setDescription("Jumlah untuk menarik uang").setRequired(true)),
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
+    await interaction.deferReply();
     try {
       const amount = interaction.options.getInteger("amount");
       const user = await User.findOne({
@@ -22,7 +28,13 @@ module.exports = {
       user.cash += amount;
       await user.save();
 
-      const embed = new EmbedBuilder().setColor("Green").setTitle("> Hasil Menarik Uang").setThumbnail(interaction.user.displayAvatarURL()).setDescription(`${interaction.user.username} menarik **${amount} uang** dari bank.`).setTimestamp().setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+      const embed = new EmbedBuilder()
+        .setColor("Green")
+        .setTitle("> Hasil Menarik Uang")
+        .setThumbnail(interaction.user.displayAvatarURL())
+        .setDescription(`${interaction.user.username} menarik **${amount} uang** dari bank.`)
+        .setTimestamp()
+        .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
       await interaction.editReply({ embeds: [embed] });
     } catch (error) {
       console.error("Error during withdraw command execution:", error);

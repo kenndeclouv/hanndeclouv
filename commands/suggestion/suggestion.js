@@ -35,6 +35,12 @@ module.exports = {
     .addSubcommand((subcommand) => subcommand.setName("list").setDescription("Tampilkan semua saran")),
 
   async execute(interaction) {
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
     await interaction.deferReply({ ephemeral: true });
     try {
       const subcommand = interaction.options.getSubcommand();

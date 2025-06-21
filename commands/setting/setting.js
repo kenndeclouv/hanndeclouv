@@ -360,25 +360,26 @@ const builder = new SlashCommandBuilder()
       )
   )
   // LANGUAGE
-  // .addSubcommandGroup((group) =>
-  //   group
-  //     .setName("language")
-  //     .setDescription("Language settings")
-  //     .addSubcommand((sub) =>
-  //       sub
-  //         .setName("set")
-  //         .setDescription("Set bot language")
-  //         .addStringOption((opt) => opt.setName("lang").setDescription("Choose language").setRequired(true).addChoices({ name: "Indonesia", value: "id" }, { name: "English", value: "en" }))
-  //     )
-  // )
+  .addSubcommand((sub) =>
+    sub
+      .setName("language")
+      .setDescription("Set bot language")
+      .addStringOption((opt) => opt.setName("lang").setDescription("Choose language").setRequired(true).addChoices({ name: "Indonesia", value: "id" }, { name: "English", value: "en" }))
+  )
   // STANDALONE
-  .addSubcommand((sub) => sub.setName("language").setDescription("⚙️ Language settings"))
+  // .addSubcommand((sub) => sub.setName("language").setDescription("⚙️ Language settings"))
   .addSubcommand((sub) => sub.setName("view").setDescription("Lihat semua pengaturan bot"));
 
 module.exports = {
   data: builder,
   adminOnly: true,
   async execute(interaction) {
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
     await interaction.deferReply({ ephemeral: true });
 
     try {
@@ -394,6 +395,7 @@ module.exports = {
       const group = interaction.options.getSubcommandGroup(false);
       const sub = interaction.options.getSubcommand();
       const guildId = interaction.guild.id;
+      const guildName = interaction.guild.name;
       const status = interaction.options.getString("status");
       const action = interaction.options.getString("action");
       const target = interaction.options.getMentionable("target");
@@ -403,7 +405,7 @@ module.exports = {
       let botSetting = await BotSetting.getCache({ guildId: guildId });
 
       if (!botSetting) {
-        botSetting = new BotSetting({ guildId: guildId });
+        botSetting = new BotSetting({ guildId: guildId, guildName: guildName });
         await botSetting.saveAndUpdateCache("guildId");
       }
 

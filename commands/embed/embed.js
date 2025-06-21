@@ -15,7 +15,8 @@ module.exports = {
         .addChannelOption((option) => option.setName("channel").setDescription("Channel tujuan embed").setRequired(true))
         .addStringOption((option) => option.setName("buttons").setDescription("Tombol (Format: Tulisan;LINK;Style(Primary, Secondary, Success, Danger), pisahkan dengan koma)").setRequired(false))
         .addStringOption((option) => option.setName("fields").setDescription("Tombol (Format: Judul;Isi, pisahkan dengan koma)").setRequired(false))
-        .addStringOption((option) => option.setName("image").setDescription("URL foto").setRequired(false))
+        // .addStringOption((option) => option.setName("image").setDescription("URL foto").setRequired(false))
+        .addAttachmentOption((option) => option.setName("image").setDescription("foto").setRequired(false))
         .addStringOption((option) => option.setName("color").setDescription("Warna embed giveaway (hex code atau nama warna)").setRequired(false))
     )
     .addSubcommand((subcommand) =>
@@ -42,7 +43,13 @@ module.exports = {
   adminOnly: true,
 
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
+    await interaction.deferReply();
 
     const group = interaction.options.getSubcommandGroup(false);
     const subcommand = interaction.options.getSubcommand();
@@ -182,21 +189,21 @@ module.exports = {
               const channel = interaction.options.getChannel("channel");
               const buttonsInput = interaction.options.getString("buttons") || null;
               const fieldsInput = interaction.options.getString("fields") || null;
-              const image = interaction.options.getString("image") || null;
+              const image = interaction.options.getAttachment("image");
               const color = interaction.options.getString("color") || "Blue";
 
               description = description.replace(/\\n/g, "\n");
 
               // Validasi image (jika ada)
-              if (image) {
-                // Cek apakah image adalah URL yang valid (http/https dan diakhiri dengan ekstensi gambar umum)
-                const imageUrlPattern = /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i;
-                if (!imageUrlPattern.test(image)) {
-                  return interaction.editReply({
-                    content: "❌ URL gambar tidak valid! Pastikan menggunakan link gambar yang benar (harus diawali http:// atau https:// dan diakhiri ekstensi gambar seperti .jpg, .png, dll)",
-                  });
-                }
-              }
+              // if (image) {
+              //   // Cek apakah image adalah URL yang valid (http/https dan diakhiri dengan ekstensi gambar umum)
+              //   const imageUrlPattern = /^https?:\/\/.+\.(jpg|jpeg|png|gif|webp|bmp|svg)$/i;
+              //   if (!imageUrlPattern.test(image)) {
+              //     return interaction.editReply({
+              //       content: "❌ URL gambar tidak valid! Pastikan menggunakan link gambar yang benar (harus diawali http:// atau https:// dan diakhiri ekstensi gambar seperti .jpg, .png, dll)",
+              //     });
+              //   }
+              // }
 
               // Cek validitas link pada tombol (jika ada)
               if (buttonsInput) {
@@ -301,7 +308,7 @@ module.exports = {
 
               // tambahin image kalo ada
               if (image) {
-                embed.setImage(image);
+                embed.setImage(image.url);
               }
 
               let message;

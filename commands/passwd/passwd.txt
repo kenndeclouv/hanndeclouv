@@ -1,0 +1,39 @@
+const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
+
+module.exports = {
+  data: new SlashCommandBuilder().setName("passwd").setDescription("Masukin password buat akses channel"),
+  async execute(interaction) {
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
+    await interaction.reply({ content: "Cek DM kamu yaa!", ephemeral: true });
+
+    const user = interaction.user;
+    const password = "kuncirahasia";
+
+    try {
+      const dm = await user.send("Masukin password kamu:");
+
+      const filter = (m) => m.author.id === user.id;
+      const collected = await dm.channel.awaitMessages({ filter, max: 1, time: 60000, errors: ["time"] });
+
+      if (collected.first().content === password) {
+        const role = interaction.guild.roles.cache.find((r) => r.name === "unlocked-role");
+        if (!role) return user.send("Role `unlocked-role` belom ada yaa!");
+
+        const member = await interaction.guild.members.fetch(user.id);
+        await member.roles.add(role);
+
+        user.send("Password bener! Role udah dikasii yaa");
+      } else {
+        user.send("Password salah yaa 😭");
+      }
+    } catch (err) {
+      console.error(err);
+      user.send("Gagal input password atau waktunya habis 😭");
+    }
+  },
+};

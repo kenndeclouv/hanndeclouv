@@ -7,6 +7,12 @@ module.exports = {
     .addUserOption((option) => option.setName("user").setDescription("User to mute").setRequired(true)),
   adminOnly: true,
   async execute(interaction) {
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
     await interaction.deferReply({ ephemeral: true });
     // Check if user is in a voice channel
     const targetUser = interaction.options.getUser("user");

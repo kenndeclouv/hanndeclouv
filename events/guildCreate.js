@@ -10,6 +10,7 @@ module.exports = {
         where: { guildId: guild.id },
         defaults: {
           guildId: guild.id,
+          guildName: guild.name ?? "Unknown",
           // tambahkan default lain jika perlu
         },
       });

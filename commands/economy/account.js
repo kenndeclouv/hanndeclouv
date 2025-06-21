@@ -56,7 +56,13 @@ module.exports = {
         )
     ),
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
+    await interaction.deferReply();
     try {
       const subcommand = interaction.options.getSubcommand();
       const bankType = interaction.options.getString("bank");

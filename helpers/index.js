@@ -299,7 +299,10 @@ async function rolePrefix(guild) {
   let updated = 0;
 
   for (const member of guild.members.cache.values()) {
-    if (!member.manageable) {
+    // allow jika member adalah botnya sendiri
+    const isBotSelf = member.id === guild.client.user.id;
+
+    if (!member.manageable && !isBotSelf) {
       console.log("Member tidak bisa diatur :" + (member.nickname || member.user.username));
       continue;
     }
@@ -336,7 +339,9 @@ async function roleUnprefix(guild) {
   let updated = 0;
 
   for (const member of guild.members.cache.values()) {
-    if (!member.manageable) {
+    const isBotSelf = member.id === guild.client.user.id;
+
+    if (!member.manageable && !isBotSelf) {
       console.log("Member tidak bisa diatur :" + (member.nickname || member.user.username));
       continue;
     }
@@ -346,7 +351,6 @@ async function roleUnprefix(guild) {
 
     const baseName = currentNick.replace(prefixPattern, "");
 
-    // cuma ubah kalau beda
     if (currentNick !== baseName) {
       try {
         await member.setNickname(baseName);
@@ -502,6 +506,7 @@ async function closeTicket(interaction) {
 
         // Create and send transcript using createTicketTranscript
         const transcriptText = await createTicketTranscript(interaction.channel);
+        // Kirim transkrip ke channel transcript
         await transcriptChannel.send({
           content: `Transkrip untuk tiket #${ticket.ticketNumber} dibuat oleh <@${ticket.userId}>.`,
           files: [
@@ -511,6 +516,24 @@ async function closeTicket(interaction) {
             },
           ],
         });
+
+        // Kirim transkrip ke user yang membuka tiket
+        try {
+          const user = await interaction.client.users.fetch(ticket.userId);
+          if (user) {
+            await user.send({
+              content: `Ini adalah transkrip untuk tiket #${ticket.ticketNumber} yang kamu buat di server **${interaction.guild.name}**.`,
+              files: [
+                {
+                  attachment: Buffer.from(transcriptText, "utf-8"),
+                  name: `ticket_${ticket.ticketNumber}_transcript.txt`,
+                },
+              ],
+            });
+          }
+        } catch (e) {
+          // User mungkin tidak bisa menerima DM
+        }
 
         // Send log if channel exists
         if (logsChannel) {
@@ -561,11 +584,11 @@ async function createTicket(interaction, ticketConfig) {
 
   if (existingTicket) {
     return await interaction.reply({
-      content: `❌ | Kamu masih punya tiket terbuka di <#${existingTicket.channelId}>. Tutup dulu yaa sebelum bikin tiket baru 😋`,
+      content: `❌ | Kamu masih punya tiket terbuka di <#${existingTicket.channelId}>. Tutup dulu yaa sebelum bikin tiket baru`,
       ephemeral: true,
     });
   }
-  console.log("🛠 createTicket() called by:", interaction.user.tag);
+  // console.log("🛠 createTicket() called by:", interaction.user.tag);
   try {
     const newCounter = await TicketCounter.create();
     const ticketNumber = newCounter.id;
@@ -573,7 +596,7 @@ async function createTicket(interaction, ticketConfig) {
       .toLowerCase()
       .replace(/[^a-z0-9]/g, "")
       .slice(0, 8);
-    const channelName = `${username}-${ticketNumber}`;
+    const channelName = `🎫┃${ticketNumber}-${username}`;
 
     const ticketChannel = await interaction.guild.channels.create({
       name: channelName,
@@ -595,8 +618,8 @@ async function createTicket(interaction, ticketConfig) {
     });
 
     const ticketEmbed = new EmbedBuilder()
-      .setTitle(`🎫 Tiket #${ticketNumber}`)
-      .setDescription(`haloo ${interaction.user}! tiketmu udah terbuat! tolong tunggu staff <@&${ticketConfig.staffRoleId}> untuk bantu yaa 🥺`)
+      .setTitle(`> 🎫 Tiket #${ticketNumber}`)
+      .setDescription(`haloo ${interaction.user}! tiketmu udah terbuat! tolong tunggu staff <@&${ticketConfig.staffRoleId}> untuk bantu yaa`)
       .setColor("Blue")
       // .setFooter("Sistem Tiket")
       .setTimestamp();
@@ -630,6 +653,39 @@ async function createTicket(interaction, ticketConfig) {
   }
 }
 
+async function updatePetStatus(pet) {
+  const now = Date.now();
+  const lastUpdated = pet.lastUpdatedAt ? pet.lastUpdatedAt.getTime() : now;
+
+  const hoursPassed = Math.floor((now - lastUpdated) / (1000 * 60 * 60)); // hitung berapa jam berlalu
+
+  if (hoursPassed <= 0) return; // belum ada waktu yang cukup berlalu
+
+  // update berdasarkan waktu yang lewat
+  pet.hunger = Math.max(pet.hunger - 5 * hoursPassed, 0);
+  pet.happiness = Math.max(pet.happiness - 10 * hoursPassed, 0);
+
+  if (pet.hunger <= 0 && pet.happiness <= 0 && !pet.isDead) {
+    pet.isDead = true;
+
+    const user = await User.findOne({ where: { userId: pet.userId, isDead: false } });
+
+    if (user) {
+      const embed = new EmbedBuilder().setTitle("> 💀 Pet Kamu Telah Mati!").setDescription(`Pet kamu telah mati karena kelaparan!`).setColor("Red");
+
+      try {
+        const discordUser = await client.users.fetch(user.userId);
+        await discordUser.send({ embeds: [embed] });
+      } catch (sendErr) {
+        console.error(`gagal mengirim pesan ke user ${user.userId}:`, sendErr);
+      }
+    }
+  }
+
+  pet.lastUpdatedAt = new Date();
+  await pet.save();
+}
+
 module.exports = {
   t,
   checkCooldown,
@@ -648,4 +704,5 @@ module.exports = {
   createTicketTranscript,
   closeTicket,
   createTicket,
+  updatePetStatus,
 };

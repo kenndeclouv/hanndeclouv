@@ -8,7 +8,13 @@ module.exports = {
     .addUserOption((option) => option.setName("target").setDescription("Pengguna untuk memberikan uang").setRequired(true))
     .addIntegerOption((option) => option.setName("amount").setDescription("Jumlah uang untuk memberikan").setRequired(true)),
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
+    await interaction.deferReply();
     try {
       const target = interaction.options.getUser("target");
       const amount = interaction.options.getInteger("amount");
@@ -31,7 +37,13 @@ module.exports = {
       await giver.save();
       await receiver.save();
 
-      const embed = new EmbedBuilder().setColor("Green").setTitle("> Hasil Memberikan Uang").setThumbnail(interaction.user.displayAvatarURL()).setDescription(`kamu memberikan **${amount} uang** ke **${target.username}**!`).setTimestamp().setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+      const embed = new EmbedBuilder()
+        .setColor("Green")
+        .setTitle("> Hasil Memberikan Uang")
+        .setThumbnail(interaction.user.displayAvatarURL())
+        .setDescription(`kamu memberikan **${amount} uang** ke **${target.username}**!`)
+        .setTimestamp()
+        .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
       return interaction.editReply({ embeds: [embed] });
     } catch (error) {
       console.error("Error during give command execution:", error);

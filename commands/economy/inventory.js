@@ -5,7 +5,13 @@ const Inventory = require("../../database/models/Inventory");
 module.exports = {
   data: new SlashCommandBuilder().setName("inventory").setDescription("Lihat semua item di inventaris kamu."),
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
+    await interaction.deferReply();
     try {
       const user = await User.findOne({ where: { userId: interaction.user.id } });
       if (!user) {
@@ -23,7 +29,12 @@ module.exports = {
         return acc;
       }, {});
 
-      const embed = new EmbedBuilder().setColor("Blue").setTitle("> Inventaris kamu").setDescription("Item yang kamu miliki:").setTimestamp().setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+      const embed = new EmbedBuilder()
+        .setColor("Blue")
+        .setTitle("> Inventaris kamu")
+        .setDescription("Item yang kamu miliki:")
+        .setTimestamp()
+        .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
 
       Object.entries(itemCounts).forEach(([itemName, count]) => {
         embed.addFields({ name: `${itemName} (${count})`, value: `kamu memiliki item ini sebanyak ${count} barang`, inline: true });

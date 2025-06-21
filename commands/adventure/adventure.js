@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, WebhookClient } = require("discord.js");
-const User = require("../../database/models/userAdventure"); // Model user buat karakter
+const User = require("../../database/models/UserAdventure"); // Model user buat karakter
 const Inventory = require("../../database/models/InventoryAdventure"); // Buat item & loot
 require("dotenv").config();
 
@@ -16,6 +16,12 @@ module.exports = {
   // .addSubcommand((subcommand) => subcommand.setName("enter-domain").setDescription("Beli item di toko!")),
 
   async execute(interaction) {
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
     await interaction.channel.sendTyping();
 
     try {

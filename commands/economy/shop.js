@@ -5,7 +5,13 @@ const Inventory = require("../../database/models/Inventory");
 module.exports = {
   data: new SlashCommandBuilder().setName("shop").setDescription("Lihat dan beli item dari toko."),
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
+    await interaction.deferReply();
     try {
       const user = await User.getCache({ userId: interaction.user.id });
       if (!user) {

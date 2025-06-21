@@ -1,12 +1,18 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const User = require("../../database/models/User");
 require("dotenv").config();
-const{ checkCooldown }= require("../../helpers");
+const { checkCooldown } = require("../../helpers");
 
 module.exports = {
   data: new SlashCommandBuilder().setName("lootbox").setDescription("Buka kotak hadiah untuk mendapatkan hadiah acak."),
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
+    await interaction.deferReply();
     try {
       let user = await User.findOne({
         where: { userId: interaction.user.id },
@@ -27,7 +33,13 @@ module.exports = {
       user.lastLootbox = Date.now();
       await user.save();
 
-      const embed = new EmbedBuilder().setColor("Green").setTitle("> Hasil Membuka Kotak Hadiah").setThumbnail(interaction.user.displayAvatarURL()).setDescription(`kamu membuka kotak hadiah dan menerima **${randomReward} uang**!`).setTimestamp().setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+      const embed = new EmbedBuilder()
+        .setColor("Green")
+        .setTitle("> Hasil Membuka Kotak Hadiah")
+        .setThumbnail(interaction.user.displayAvatarURL())
+        .setDescription(`kamu membuka kotak hadiah dan menerima **${randomReward} uang**!`)
+        .setTimestamp()
+        .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
       await interaction.editReply({ embeds: [embed] });
     } catch (error) {
       console.error("Error during lootbox command execution:", error);

@@ -35,6 +35,12 @@ module.exports = {
     .addSubcommand((subcommand) => subcommand.setName("transcript").setDescription("Dapatkan transkrip dari tiket.")),
 
   async execute(interaction) {
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
     await interaction.deferReply({ ephemeral: true });
 
     try {

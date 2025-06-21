@@ -1,24 +1,30 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const User = require("../../database/models/User");
 require("dotenv").config();
-const{ checkCooldown }= require("../../helpers");
+const { checkCooldown } = require("../../helpers");
 
 module.exports = {
   data: new SlashCommandBuilder().setName("daily").setDescription("Kumpulkan uang harian kamu."),
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
+    await interaction.deferReply();
     try {
       let user = await User.findOne({
         where: { userId: interaction.user.id },
       });
       if (!user) {
-        return interaction.reply({ content: "kamu belum memiliki akun gunakan `/account create` untuk membuat akun.", ephemeral: true });
+        return interaction.reply({ content: "kamu belum memiliki akun gunakan `/account create` untuk membuat akun." });
       }
 
       // Cooldown check
       const cooldown = checkCooldown(user.lastDaily, process.env.DAILY_COOLDOWN);
       if (cooldown.remaining) {
-        return interaction.reply({ content: `🕒 | kamu dapat mengumpulkan uang harian kamu dalam **${cooldown.time}**!`, ephemeral: true });
+        return interaction.reply({ content: `🕒 | kamu dapat mengumpulkan uang harian kamu dalam **${cooldown.time}**!` });
       }
 
       // Randomize the daily cash reward between 50 and 150
@@ -27,7 +33,13 @@ module.exports = {
       user.lastDaily = Date.now();
       await user.save();
 
-      const embed = new EmbedBuilder().setColor("Green").setTitle("> Hasil Mengumpulkan Uang Harian").setThumbnail(interaction.user.displayAvatarURL()).setDescription(`kamu mengumpulkan uang harian kamu sebesar **${randomCash} uang**!`).setTimestamp().setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+      const embed = new EmbedBuilder()
+        .setColor("Green")
+        .setTitle("> Hasil Mengumpulkan Uang Harian")
+        .setThumbnail(interaction.user.displayAvatarURL())
+        .setDescription(`kamu mengumpulkan uang harian kamu sebesar **${randomCash} uang**!`)
+        .setTimestamp()
+        .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
       return interaction.editReply({ embeds: [embed] });
     } catch (error) {
       console.error("Error during daily command execution:", error);

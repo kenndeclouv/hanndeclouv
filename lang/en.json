@@ -1,7 +1,7 @@
 {
     "ABOUT_TITLE": "Hello!",
-    "ABOUT_DESCRIPTION": "Hello! I'm **{botName}**\nMy owner is <@{ownerId}>. DM them if you have any questions or want to collaborate :)\n\n:date: Birthdate\n`27/05/2022`\n:computer: Owner\n`kenndeclouv`\n\n{userMention}, want to invite me to your server or check out my website? Click the buttons below~",
-    "ABOUT_FOOTER": "Thank you for using me! 😋",
+    "ABOUT_DESCRIPTION": "Hello! I'm **{botName}**\nMy owner is kenndeclouv. DM them if you have any questions or want to collaborate :)\n\n:date: Birthdate\n`27/05/2022`\n:computer: Owner\n`kenndeclouv`\n\nwant to invite me to your server or check out my website? Click the buttons below",
+    "ABOUT_FOOTER": "Thank you for invite me! 😋",
     "ABOUT_INVITE_BUTTON": "🚀 Invite Bot",
     "ABOUT_WEBSITE_BUTTON": "🌐 Website",
     "ABOUT_ERROR": "❌ | An error occurred while running this command. Please try again."

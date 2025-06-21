@@ -2,7 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const User = require("../../database/models/User");
 const Inventory = require("../../database/models/Inventory");
 require("dotenv").config();
-const{ checkCooldown }= require("../../helpers");
+const { checkCooldown } = require("../../helpers");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -10,7 +10,13 @@ module.exports = {
     .setDescription("Coba mencuri uang dari pengguna lain.")
     .addUserOption((option) => option.setName("target").setDescription("Pengguna yang ingin kamu mencuri").setRequired(true)),
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
+    await interaction.deferReply();
     try {
       const targetUser = interaction.options.getUser("target");
       if (targetUser.id === interaction.user.id) {
@@ -65,10 +71,22 @@ module.exports = {
         await user.save();
         await target.save();
 
-        const embed = new EmbedBuilder().setColor("Green").setTitle("> Hasil Mencuri").setThumbnail(interaction.user.displayAvatarURL()).setDescription(`kamu berhasil mencuri **${robAmount} uang** dari **${targetUser.username}**!`).setTimestamp().setFooter({ text: `sistem`, iconURL: interaction.guild.iconURL() });
+        const embed = new EmbedBuilder()
+          .setColor("Green")
+          .setTitle("> Hasil Mencuri")
+          .setThumbnail(interaction.user.displayAvatarURL())
+          .setDescription(`kamu berhasil mencuri **${robAmount} uang** dari **${targetUser.username}**!`)
+          .setTimestamp()
+          .setFooter({ text: `sistem`, iconURL: interaction.guild.iconURL() });
         await interaction.editReply({ embeds: [embed] });
 
-        const embedToTarget = new EmbedBuilder().setColor("Red").setTitle("> Kamu dicuri!").setThumbnail(interaction.user.displayAvatarURL()).setDescription(`**${interaction.user.username}** mencuri **${robAmount} uang** dari kamu!`).setTimestamp().setFooter({ text: `sistem`, iconURL: interaction.guild.iconURL() });
+        const embedToTarget = new EmbedBuilder()
+          .setColor("Red")
+          .setTitle("> Kamu dicuri!")
+          .setThumbnail(interaction.user.displayAvatarURL())
+          .setDescription(`**${interaction.user.username}** mencuri **${robAmount} uang** dari kamu!`)
+          .setTimestamp()
+          .setFooter({ text: `sistem`, iconURL: interaction.guild.iconURL() });
         await targetUser.send({ embeds: [embedToTarget] });
       } else {
         // Failed rob, pay the target
@@ -93,7 +111,11 @@ module.exports = {
           .setColor("Red")
           .setTitle("> Hasil Mencuri")
           .setThumbnail(interaction.user.displayAvatarURL())
-          .setDescription(`❌ | kamu gagal mencuri dari **${targetUser.username}** dan membayar mereka **${poison ? "semua uang kamu" : robAmount + " uang"}** sebagai denda. ${guard ? "Karena target memiliki guard" : ""} ${poison ? "Karena target memiliki poison" : ""}`)
+          .setDescription(
+            `❌ | kamu gagal mencuri dari **${targetUser.username}** dan membayar mereka **${poison ? "semua uang kamu" : robAmount + " uang"}** sebagai denda. ${guard ? "Karena target memiliki guard" : ""} ${
+              poison ? "Karena target memiliki poison" : ""
+            }`
+          )
           .setTimestamp()
           .setFooter({ text: `sistem`, iconURL: interaction.guild.iconURL() });
         await interaction.editReply({ embeds: [embed] });
@@ -102,7 +124,11 @@ module.exports = {
           .setColor("Green")
           .setTitle("> Hasil Mencuri")
           .setThumbnail(interaction.user.displayAvatarURL())
-          .setDescription(`**${interaction.user.username}** berusaha mencuri **${robAmount} uang** dari kamu! tapi gagal dan membayar kamu **${poison ? penalty : robAmount} uang** sebagai denda. ${guard ? "Karena target kamu memiliki guard" : ""} ${poison ? "Karena target kamu memiliki poison" : ""}`)
+          .setDescription(
+            `**${interaction.user.username}** berusaha mencuri **${robAmount} uang** dari kamu! tapi gagal dan membayar kamu **${poison ? penalty : robAmount} uang** sebagai denda. ${
+              guard ? "Karena target kamu memiliki guard" : ""
+            } ${poison ? "Karena target kamu memiliki poison" : ""}`
+          )
           .setTimestamp()
           .setFooter({ text: `sistem`, iconURL: interaction.guild.iconURL() });
         await targetUser.send({ embeds: [embedToTarget] });

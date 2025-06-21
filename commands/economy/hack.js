@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionsBitField } = require("discord.js");
 const User = require("../../database/models/User"); // pastikan model User benar
 require("dotenv").config();
-const{ checkCooldown }= require("../../helpers");
+const { checkCooldown } = require("../../helpers");
 const Inventory = require("../../database/models/Inventory");
 
 module.exports = {
@@ -11,8 +11,13 @@ module.exports = {
     .addUserOption((option) => option.setName("target").setDescription("User yang ingin di hack").setRequired(true)),
 
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
-
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
+    await interaction.deferReply();
     try {
       const targetUser = interaction.options.getUser("target");
       const user = await User.findOne({ where: { userId: interaction.user.id } });
@@ -66,7 +71,7 @@ module.exports = {
       }
       // simulasi hasil hack
       setTimeout(async () => {
-        const hackResult = Math.random() < (user.hackMastered || 10) / 100 * successChance ? "success" : "failure";
+        const hackResult = Math.random() < ((user.hackMastered || 10) / 100) * successChance ? "success" : "failure";
 
         if (hackResult === "success") {
           // transfer semua uang target ke user

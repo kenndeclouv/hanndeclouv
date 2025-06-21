@@ -8,7 +8,13 @@ module.exports = {
     .addUserOption((option) => option.setName("target").setDescription("Pengguna untuk mentransfer uang").setRequired(true))
     .addIntegerOption((option) => option.setName("amount").setDescription("Jumlah uang untuk mentransfer").setRequired(true)),
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
+    await interaction.deferReply();
     try {
       const target = interaction.options.getUser("target");
       const amount = interaction.options.getInteger("amount");
@@ -44,9 +50,18 @@ module.exports = {
 
       const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 
-      const confirmEmbed = new EmbedBuilder().setColor("Yellow").setTitle("> Konfirmasi Transfer Uang").setThumbnail(interaction.user.displayAvatarURL()).setDescription(`kamu akan mentransfer **${amount} uang** ke **${target.username}** dengan biaya **${fee} uang**. Apakah kamu ingin melanjutkan?`).setTimestamp().setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+      const confirmEmbed = new EmbedBuilder()
+        .setColor("Yellow")
+        .setTitle("> Konfirmasi Transfer Uang")
+        .setThumbnail(interaction.user.displayAvatarURL())
+        .setDescription(`kamu akan mentransfer **${amount} uang** ke **${target.username}** dengan biaya **${fee} uang**. Apakah kamu ingin melanjutkan?`)
+        .setTimestamp()
+        .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
 
-      const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("confirm").setLabel("Konfirmasi").setStyle(ButtonStyle.Success), new ButtonBuilder().setCustomId("cancel").setLabel("Batalkan").setStyle(ButtonStyle.Danger));
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder().setCustomId("confirm").setLabel("Konfirmasi").setStyle(ButtonStyle.Success),
+        new ButtonBuilder().setCustomId("cancel").setLabel("Batalkan").setStyle(ButtonStyle.Danger)
+      );
 
       await interaction.editReply({ embeds: [confirmEmbed], components: [row] });
 
@@ -55,7 +70,13 @@ module.exports = {
 
       collector.on("collect", async (i) => {
         if (i.customId === "confirm") {
-          const embed = new EmbedBuilder().setColor("Green").setTitle("> Berhasil Transfer Uang").setThumbnail(interaction.user.displayAvatarURL()).setDescription(`kamu berhasil mentransfer **${amount} uang** ke **${target.username}** dengan biaya **${fee} uang**!`).setTimestamp().setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+          const embed = new EmbedBuilder()
+            .setColor("Green")
+            .setTitle("> Berhasil Transfer Uang")
+            .setThumbnail(interaction.user.displayAvatarURL())
+            .setDescription(`kamu berhasil mentransfer **${amount} uang** ke **${target.username}** dengan biaya **${fee} uang**!`)
+            .setTimestamp()
+            .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
           await i.update({ embeds: [embed], components: [] });
 
           const targetEmbed = new EmbedBuilder()

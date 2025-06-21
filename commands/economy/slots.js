@@ -7,7 +7,13 @@ module.exports = {
     .setDescription("Mainkan mesin slot dan coba keberuntungan kamu. (JUDI HARAM BOY!)")
     .addIntegerOption((option) => option.setName("bet").setDescription("Jumlah untuk bertaruh").setRequired(true)),
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
+    await interaction.deferReply();
     try {
       const bet = interaction.options.getInteger("bet");
       const user = await User.findOne({

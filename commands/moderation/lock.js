@@ -8,9 +8,14 @@ module.exports = {
     .addChannelOption((option) => option.setName("channel").setDescription("Channel to lock").setRequired(false)),
   adminOnly: true,
   async execute(interaction) {
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
+    await interaction.deferReply({ ephemeral: true });
     try {
-      await interaction.deferReply({ ephemeral: true });
-
       // cek permission manual
       if (!(await checkPermission(interaction.member))) {
         return interaction.editReply({

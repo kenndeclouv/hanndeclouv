@@ -36,10 +36,16 @@ module.exports = {
         .addUserOption((option) => option.setName("user").setDescription("Pengguna yang akan diset XPnya").setRequired(true))
         .addIntegerOption((option) => option.setName("xp").setDescription("XP yang akan diset").setRequired(true))
     ),
-  adminOnly: true,
+  // adminOnly: true,
 
   async execute(interaction) {
-    await interaction.deferReply({ ephemeral: true });
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
+    await interaction.deferReply();
     try {
       const subcommand = interaction.options.getSubcommand();
       switch (subcommand) {
@@ -74,6 +80,7 @@ module.exports = {
         }
         case "leaderboard": {
           const topUsers = await User.findAll({
+            where: { guildId: interaction.guild.id },
             order: [
               ["level", "DESC"],
               ["xp", "DESC"],
@@ -98,6 +105,12 @@ module.exports = {
           break; // Added break statement
         }
         case "add": {
+          if (!(await checkPermission(interaction.member))) {
+            return interaction.editReply({
+              content: "❌ Kamu tidak punya izin untuk menggunakan perintah ini.",
+              ephemeral: true,
+            });
+          }
           const user = await User.getCache({ userId: interaction.options.getUser("user").id, guildId: interaction.guild.id });
           if (!user) {
             return interaction.editReply({ content: "Pengguna tidak ditemukan." });
@@ -118,9 +131,15 @@ module.exports = {
               iconURL: interaction.client.user.displayAvatarURL(),
             });
 
-          return interaction.editReply({ embeds: [embed] });
+          return interaction.editReply({ embeds: [embed], ephemeral: true });
         }
         case "set": {
+          if (!(await checkPermission(interaction.member))) {
+            return interaction.editReply({
+              content: "❌ Kamu tidak punya izin untuk menggunakan perintah ini.",
+              ephemeral: true,
+            });
+          }
           const user = await User.getCache({ userId: interaction.options.getUser("user").id, guildId: interaction.guild.id });
           if (!user) {
             return interaction.editReply({ content: "Pengguna tidak ditemukan." });
@@ -137,9 +156,15 @@ module.exports = {
               iconURL: interaction.client.user.displayAvatarURL(),
             });
 
-          return interaction.editReply({ embeds: [embed] });
+          return interaction.editReply({ embeds: [embed], ephemeral: true });
         }
         case "xp-add": {
+          if (!(await checkPermission(interaction.member))) {
+            return interaction.editReply({
+              content: "❌ Kamu tidak punya izin untuk menggunakan perintah ini.",
+              ephemeral: true,
+            });
+          }
           const user = await User.getCache({ userId: interaction.options.getUser("user").id, guildId: interaction.guild.id });
           if (!user) {
             return interaction.editReply({ content: "Pengguna tidak ditemukan." });
@@ -158,9 +183,15 @@ module.exports = {
               iconURL: interaction.client.user.displayAvatarURL(),
             });
 
-          return interaction.editReply({ embeds: [embed] });
+          return interaction.editReply({ embeds: [embed], ephemeral: true });
         }
         case "xp-set": {
+          if (!(await checkPermission(interaction.member))) {
+            return interaction.editReply({
+              content: "❌ Kamu tidak punya izin untuk menggunakan perintah ini.",
+              ephemeral: true,
+            });
+          }
           const user = await User.getCache({ userId: interaction.options.getUser("user").id, guildId: interaction.guild.id });
           if (!user) {
             return interaction.editReply({ content: "Pengguna tidak ditemukan." });
@@ -177,7 +208,7 @@ module.exports = {
               iconURL: interaction.client.user.displayAvatarURL(),
             });
 
-          return interaction.editReply({ embeds: [embed] });
+          return interaction.editReply({ embeds: [embed], ephemeral: true });
         }
       }
     } catch (error) {

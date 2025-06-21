@@ -7,6 +7,7 @@ class BotSetting extends CacheableModel {
     return super.init(
       {
         guildId: { type: DataTypes.STRING, allowNull: false, unique: true },
+        guildName: { type: DataTypes.STRING, allowNull: false, unique: true },
         lang: { type: DataTypes.STRING, defaultValue: "id" },
 
         // AUTOMOD
@@ -70,7 +71,7 @@ class BotSetting extends CacheableModel {
         robCooldown: { type: DataTypes.INTEGER, defaultValue: 0 },
         hackCooldown: { type: DataTypes.INTEGER, defaultValue: 0 },
         petCooldown: { type: DataTypes.INTEGER, defaultValue: 0 },
-        gachaCooldown: { type: DataTypes.INTEGER, defaultValue: 0 },
+        petGachaCooldown: { type: DataTypes.INTEGER, defaultValue: 0 },
 
         // MINECRAFT
         minecraftIp: { type: DataTypes.STRING, allowNull: true },

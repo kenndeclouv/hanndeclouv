@@ -29,6 +29,13 @@ module.exports = {
     .addSubcommand((subcommand) => subcommand.setName("clear").setDescription("Hapus semua checklist")),
 
   async execute(interaction) {
+    if (!interaction.guild) {
+      return interaction.reply({
+        content: "🚫 | This command can't use here😭",
+        ephemeral: true,
+      });
+    }
+
     await interaction.deferReply({ ephemeral: true });
     try {
       const subcommand = interaction.options.getSubcommand();
