@@ -1,85 +1,85 @@
-# 📁 Command: utility
+## 📁 Command: utility
 
-## /about
+### /about
 
-**Deskripsi:** perkenalan singkat tentang bot ini 😋
+**Deskripsi:** 😋 A brief introduction about this bot
 
 ### Usage:
-`/about`
 
 ---
 
 
-## /avatar
+### /avatar
 
-**Deskripsi:** Melihat avatar user
+**Deskripsi:** 🖼️ User's avatar
 
 ### Usage:
-`/avatar [user]`
+`/avatar user [user]`
 
 ### Options:
-- `user` — User untuk melihat avatar
-  - **Contoh Penggunaan:** `/avatar user:[value]`
+### Untuk perintah (user):
+- `user` — User 
+  - **Contoh Penggunaan:** `/avatar user user:[value]`
 
 ---
 
 
-## /help
+### /command-id
 
-**Deskripsi:** Menampilkan daftar perintah bot dengan paginasi.
+**Deskripsi:** cari ID dari command dan generate command mention-nya 😋
 
 ### Usage:
-`/help`
+`/command-id name [name]`
+
+### Options:
+### Untuk perintah (name):
+- `name` (required) — nama command yang mau dicari
+  - **Contoh Penggunaan:** `/command-id name name:[value]`
 
 ---
 
 
-## /ping
+### /help
 
-**Deskripsi:** Displays the bot latency and API latency.
+**Deskripsi:** Menampilkan daftar perintah bot dengan detail super lengkap.
 
 ### Usage:
-`/ping`
 
 ---
 
 
-## /roleprefix
+### /ping
 
-**Deskripsi:** Menambahkan prefix role tertinggi ke nickname member.
+**Deskripsi:** Cek kecepatan respon bot dan API Discord.
 
 ### Usage:
-`/roleprefix`
 
 ---
 
 
-## /restart
+### /roleprefix
+
+**Deskripsi:** Menambahkan atau menghapus prefix dari nickname member.
+
+### Usage:
+
+---
+
+
+### /restart
 
 **Deskripsi:** 🔁 restart bot
 
 ### Usage:
-`/restart`
 
 ---
 
 
-## /stats
+### /stats
 
 **Deskripsi:** Menampilkan statistik bot.
 
 ### Usage:
-`/stats`
-
----
-
-
-## /uptime
-
-**Deskripsi:** Menampilkan waktu online bot.
-
-### Usage:
-`/uptime`
 
 ---
 

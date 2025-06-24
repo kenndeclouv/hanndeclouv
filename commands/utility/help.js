@@ -1,167 +1,112 @@
-// const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ApplicationCommandOptionType, WebhookClient } = require("discord.js");
+// const {
+//   SlashCommandBuilder,
+//   ActionRowBuilder,
+//   StringSelectMenuBuilder,
+//   EmbedBuilder,
+//   WebhookClient,
+// } = require("discord.js");
 // const fs = require("fs");
 // const path = require("path");
-// const BotSetting = require("../../database/models/BotSetting");
-// const { checkPermission } = require("../../helpers");
 // require("dotenv").config();
 
 // module.exports = {
-//   data: new SlashCommandBuilder().setName("help").setDescription("Menampilkan daftar perintah bot dengan paginasi."),
+//   data: new SlashCommandBuilder()
+//     .setName("help")
+//     .setDescription("Menampilkan daftar perintah bot dengan detail super lengkap."),
 
 //   async execute(interaction) {
+//     await interaction.deferReply();
 //     try {
-//       const setting = await BotSetting.getCache({ guildId: interaction.guild.id });
-//       if (!setting) {
-//         return interaction.reply({ content: "❌ | Pengaturan bot tidak ditemukan.", ephemeral: true });
-//       }
-
+//       // ambil folder command
 //       const commandFolders = fs.readdirSync(path.join(__dirname, ".."));
-//       const embeds = [];
+
+//       const categories = [];
+//       const embeds = {};
 //       let totalCommands = 0;
 
-//       // Embed Beranda
-//       const homeEmbed = new EmbedBuilder()
-//         .setColor("#0099ff")
-//         .setTitle("Selamat datang di menu bantuan bot!")
-//         .setDescription(`Bot ini menyediakan berbagai perintah. Gunakan tombol di bawah untuk melihat daftar perintah dalam setiap kategori.\n\n**Total perintah: \`0\`**\n\n**Perintah yang tersedia:**`)
-//         .setThumbnail(interaction.client.user.displayAvatarURL())
-//         .setFooter({
-//           text: "Klik tombol di bawah untuk melihat perintah dalam kategori ini",
-//           iconURL: interaction.client.user.displayAvatarURL(),
-//         });
-//       embeds.push(homeEmbed);
+//       const maxEmbedLength = 4096;
 
-//       // Mapping lengkap semua fitur
-//       const settingMap = {
-//         antiinvite: "antiInviteOn",
-//         antilink: "antiLinkOn",
-//         antispam: "antiSpamOn",
-//         antibadword: "antiBadwordOn",
-//         serverstats: "serverStatsOn",
-//         economy: "economyOn",
-//         giveaway: "giveawayOn",
-//         invites: "invitesOn",
-//         suggestion: "suggestionOn",
-//         ticket: "ticketOn",
-//         pet: "petOn",
-//         squad: "squadOn",
-//         adventure: "adventureOn",
-//         leveling: "levelingOn",
-//         welcomein: "welcomeInOn",
-//         welcomeout: "welcomeOutOn",
-//         minecraftstats: "minecraftStatsOn",
-//         nsfw: "nsfwOn",
-//         checklist: "checklistOn",
-//       };
+//       function getMarkdownContent(category) {
+//         const filePath = path.join(__dirname, "../../docs", `${category}.md`);
+//         if (!fs.existsSync(filePath)) return '📂 Dokumentasi belum tersedia untuk kategori ini.';
 
-//       // Loop setiap folder command
+//         let content = fs.readFileSync(filePath, "utf-8");
+
+//         // Potong kalau lebih dari 4096 karakter
+//         if (content.length > maxEmbedLength) {
+//           content = content.substring(0, maxEmbedLength - 50) + '\n\n📄 Konten terlalu panjang, sebagian terpotong...';
+//         }
+
+//         return content;
+//       }
+
+//       // looping semua folder command
 //       for (const folder of commandFolders) {
-//         const folderKey = folder.toLowerCase();
-//         const settingKey = settingMap[folderKey];
-
-//         // Skip folder jika setting tidak aktif
-//         if (settingKey && !setting[settingKey]) continue;
-
 //         const folderPath = path.join(__dirname, "..", folder);
 //         if (!fs.statSync(folderPath).isDirectory()) continue;
 
-//         const commandFiles = fs.readdirSync(folderPath).filter((file) => file.endsWith(".js"));
-//         const embed = new EmbedBuilder().setColor("#0099ff").setTitle(`> Kategori ${folder}`).setThumbnail(interaction.client.user.displayAvatarURL()).setFooter({
-//           text: "Klik tombol di bawah untuk melihat perintah dalam kategori ini",
-//           iconURL: interaction.client.user.displayAvatarURL(),
-//         });
+//         const commandFiles = fs.readdirSync(folderPath).filter(file => file.endsWith(".js"));
 
-//         let fieldCount = 0;
-//         let categoryCommands = 0;
+//         if (commandFiles.length > 0) {
+//           categories.push({ label: folder, value: folder });
+//           totalCommands += commandFiles.length;
 
-//         // Loop setiap file command
-//         for (const file of commandFiles) {
-//           const commandPath = path.join(folderPath, file);
-//           const command = require(commandPath);
+//           const markdownContent = getMarkdownContent(folder);
 
-//           // Skip command admin jika tidak memiliki izin
-//           if (command.adminOnly && !(await checkPermission(interaction.member))) continue;
-
-//           if (!command.data?.name) continue;
-
-//           // Handle subcommands
-//           const subCommands = command.data.options?.filter((opt) => [ApplicationCommandOptionType.Subcommand, ApplicationCommandOptionType.SubcommandGroup].includes(opt.type)) || [];
-
-//           if (subCommands.length === 0) {
-//             // Command biasa
-//             if (fieldCount >= 25) continue;
-//             embed.addFields({
-//               name: `**\`/${command.data.name}\`**`,
-//               value: command.data.description || "Tidak ada deskripsi",
+//           embeds[folder] = new EmbedBuilder()
+//             .setColor("Blue")
+//             // .setTitle(`📂 Kategori: ${folder}`)
+//             .setTitle(" ")
+//             .setThumbnail(interaction.client.user.displayAvatarURL())
+//             .setDescription(`${markdownContent}`) // pastiin ini string dan udah dipotong
+//             .setFooter({
+//               text: `Gunakan select menu untuk memilih kategori lain.`,
+//               iconURL: interaction.client.user.displayAvatarURL(),
 //             });
-//             totalCommands++;
-//             categoryCommands++;
-//             fieldCount++;
-//           } else {
-//             // Subcommands
-//             for (const opt of subCommands) {
-//               if (opt.type === ApplicationCommandOptionType.SubcommandGroup) {
-//                 for (const sub of opt.options) {
-//                   if (fieldCount >= 25) break;
-//                   embed.addFields({
-//                     name: `**\`/${command.data.name} ${opt.name} ${sub.name}\`**`,
-//                     value: sub.description || "Tidak ada deskripsi",
-//                   });
-//                   totalCommands++;
-//                   categoryCommands++;
-//                   fieldCount++;
-//                 }
-//               } else {
-//                 if (fieldCount >= 25) continue;
-//                 embed.addFields({
-//                   name: `**\`/${command.data.name} ${opt.name}\`**`,
-//                   value: opt.description || "Tidak ada deskripsi",
-//                 });
-//                 totalCommands++;
-//                 categoryCommands++;
-//                 fieldCount++;
-//               }
-//             }
-//           }
-//         }
 
-//         if (categoryCommands > 0) {
-//           embed.setDescription(`Daftar perintah dalam kategori ${folder} (**${categoryCommands}** perintah)`);
-//           embeds.push(embed);
 //         }
 //       }
 
-//       // Update total commands di embed beranda
-//       embeds[0].data.description = embeds[0].data.description.replace("Total perintah: `0`", `Total perintah: \`${totalCommands}\``);
+//       // buat embed home
+//       const homeEmbed = new EmbedBuilder()
+//         .setColor("#5865F2")
+//         .setTitle("> 🤖 **Bot Help Center**")
+//         .setThumbnail(interaction.client.user.displayAvatarURL())
+//         .setDescription(
+//           `👋 **Selamat datang di pusat bantuan bot!**\n
+// 🔎 **Tips Cepat:**
+// • Pilih kategori di bawah untuk melihat daftar perintah beserta penjelasannya.
+// • Klik nama perintah untuk detail lebih lanjut (jika tersedia).
+// • Gunakan \`/\` di chat untuk auto-complete perintah.
 
-//       // Navigasi tombol
-//       const buttons = new ActionRowBuilder().addComponents(
-//         new ButtonBuilder()
-//           .setCustomId("previous")
-//           .setLabel("<<")
-//           .setStyle(ButtonStyle.Primary)
-//           .setDisabled(embeds.length <= 1),
-//         new ButtonBuilder()
-//           .setCustomId("home")
-//           .setLabel("Beranda")
-//           .setStyle(ButtonStyle.Secondary)
-//           .setDisabled(embeds.length <= 1),
-//         new ButtonBuilder()
-//           .setCustomId("next")
-//           .setLabel(">>")
-//           .setStyle(ButtonStyle.Primary)
-//           .setDisabled(embeds.length <= 1)
+// 📊 **Statistik:**
+// > Total kategori: **${categories.length}**
+// > Total perintah: **${totalCommands}**
+
+// 🆘 **Butuh bantuan lebih lanjut?**
+// • Join support server: [Klik di sini](https://discord.gg/syGqdtsN)
+// • Atau mention admin server.
+
+// ✨ **Selamat menjelajah fitur bot!**`
+//         )
+//         .addFields(
+//           { name: "📂 Cara Menggunakan", value: "Pilih kategori di bawah ini untuk melihat dokumentasi lengkap setiap perintah." }
+//         )
+//         .setFooter({
+//           text: `Powered by ${interaction.client.user.username} • Pilih kategori di bawah ini`,
+//           iconURL: interaction.client.user.displayAvatarURL(),
+//         });
+
+//       // buat select menu
+//       const selectMenu = new ActionRowBuilder().addComponents(
+//         new StringSelectMenuBuilder()
+//           .setCustomId("help-menu")
+//           .setPlaceholder("Pilih kategori perintah")
+//           .addOptions(categories)
 //       );
 
-//       let currentPage = 0;
-//       const message = await interaction.reply({
-//         embeds: [embeds[currentPage]],
-//         components: [buttons],
-//         ephemeral: true,
-//         fetchReply: true,
-//       });
+//       const message = await interaction.editReply({ embeds: [homeEmbed], components: [selectMenu] });
 
-//       // Collector interaksi
 //       const collector = message.createMessageComponentCollector({ time: 60000 });
 
 //       collector.on("collect", async (i) => {
@@ -169,23 +114,12 @@
 //           return i.reply({ content: "❌ | Ini bukan interaksi Anda!", ephemeral: true });
 //         }
 
-//         switch (i.customId) {
-//           case "previous":
-//             currentPage = (currentPage - 1 + embeds.length) % embeds.length;
-//             break;
-//           case "home":
-//             currentPage = 0;
-//             break;
-//           case "next":
-//             currentPage = (currentPage + 1) % embeds.length;
-//             break;
-//         }
-
-//         await i.update({ embeds: [embeds[currentPage]] });
+//         const selectedCategory = i.values[0];
+//         await i.update({ embeds: [embeds[selectedCategory]], components: [selectMenu] });
 //       });
 
 //       collector.on("end", () => {
-//         interaction.editReply({ components: [] }).catch(() => {});
+//         interaction.editReply({ components: [] }).catch(() => { });
 //       });
 //     } catch (error) {
 //       console.error("Error in /help command:", error);
@@ -196,458 +130,219 @@
 //             new EmbedBuilder()
 //               .setTitle("❌ Error Command: /help")
 //               .setDescription(`\`\`\`${error.stack}\`\`\``)
-//               .addFields({ name: "User", value: `${interaction.user.tag} (${interaction.user.id})` }, { name: "Guild", value: `${interaction.guild.name} (${interaction.guild.id})` })
+//               .addFields(
+//                 { name: "User", value: `${interaction.user.tag} (${interaction.user.id})` },
+//                 ...(interaction.guild ? [{ name: "Guild", value: `${interaction.guild.name} (${interaction.guild.id})` }] : [])
+//               )
 //               .setTimestamp(),
 //           ],
 //         })
 //         .catch(console.error);
 
-//       interaction.reply({
+//       interaction.editReply({
 //         content: "❌ | Terjadi kesalahan saat menampilkan bantuan. Silakan coba lagi nanti.",
 //         ephemeral: true,
 //       });
 //     }
 //   },
 // };
-
-// const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ApplicationCommandOptionType, WebhookClient } = require("discord.js");
-// const fs = require("fs");
-// const path = require("path");
-// const BotSetting = require("../../database/models/BotSetting");
-// const { checkPermission } = require("../../helpers");
-// require("dotenv").config();
-
-// module.exports = {
-//   data: new SlashCommandBuilder().setName("help").setDescription("Menampilkan daftar perintah bot dengan paginasi."),
-
-//   async execute(interaction) {
-//     try {
-//       const setting = await BotSetting.getCache({ guildId: interaction.guild.id });
-//       if (!setting) return interaction.reply({ content: "❌ | Pengaturan bot tidak ditemukan.", ephemeral: true });
-
-//       const commandFolders = fs.readdirSync(path.join(__dirname, ".."));
-//       const embeds = [];
-//       let totalCommands = 0;
-
-//       // Embed Beranda
-//       const homeEmbed = new EmbedBuilder()
-//         .setColor("#0099ff")
-//         .setTitle("📚 Menu Bantuan Bot")
-//         .setDescription([`**Total Perintah:** \`0\``, `**Kategori Tersedia:** \`0\``, "\nGunakan tombol di bawah untuk navigasi kategori:"].join("\n"))
-//         .setThumbnail(interaction.client.user.displayAvatarURL());
-//       embeds.push(homeEmbed);
-
-//       // Mapping lengkap semua fitur
-//       const settingMap = {
-//         antiinvite: "antiInviteOn",
-//         antilink: "antiLinkOn",
-//         antispam: "antiSpamOn",
-//         antibadword: "antiBadwordOn",
-//         serverstats: "serverStatsOn",
-//         economy: "economyOn",
-//         giveaway: "giveawayOn",
-//         invites: "invitesOn",
-//         suggestion: "suggestionOn",
-//         ticket: "ticketOn",
-//         pet: "petOn",
-//         squad: "squadOn",
-//         adventure: "adventureOn",
-//         leveling: "levelingOn",
-//         welcomein: "welcomeInOn",
-//         welcomeout: "welcomeOutOn",
-//         minecraftstats: "minecraftStatsOn",
-//         nsfw: "nsfwOn",
-//         checklist: "checklistOn",
-//       };
-
-//       // Proses setiap kategori
-//       let totalCategories = 0;
-//       for (const folder of commandFolders) {
-//         const folderKey = folder.toLowerCase();
-//         const settingKey = settingMap[folderKey];
-//         if (settingKey && !setting[settingKey]) continue;
-
-//         const folderPath = path.join(__dirname, "..", folder);
-//         if (!fs.statSync(folderPath).isDirectory()) continue;
-
-//         const commandFiles = fs.readdirSync(folderPath).filter((file) => file.endsWith(".js"));
-//         const categoryEmbed = new EmbedBuilder().setColor("#2b2d31").setTitle(`📂 Kategori: ${folder.toUpperCase()}`).setDescription(`**Perintah dalam kategori ini:**`);
-
-//         let categoryCommands = 0;
-//         const commandList = [];
-
-//         // Proses setiap command
-//         for (const file of commandFiles) {
-//           const command = require(path.join(folderPath, file));
-//           if (command.adminOnly && !(await checkPermission(interaction.member))) continue;
-//           if (!command.data?.name) continue;
-
-//           // Format command utama
-//           let commandEntry = `\n\`🞲 /${command.data.name}\``;
-//           if (command.data.description) commandEntry += ` - *${command.data.description}*`;
-
-//           // Proses subcommands
-//           const subCommands = command.data.options?.filter((opt) => [ApplicationCommandOptionType.Subcommand, ApplicationCommandOptionType.SubcommandGroup].includes(opt.type)) || [];
-
-//           // Jika ada subcommands
-//           if (subCommands.length > 0) {
-//             commandEntry += "\n┌──────────────────";
-
-//             for (const opt of subCommands) {
-//               // Subcommand Group
-//               if (opt.type === ApplicationCommandOptionType.SubcommandGroup) {
-//                 commandEntry += `\n├─ **${opt.name}**`;
-//                 for (const sub of opt.options) {
-//                   commandEntry += `\n├── \`/${command.data.name} ${opt.name} ${sub.name}\``;
-//                   if (sub.description) commandEntry += ` - ${sub.description}`;
-//                   totalCommands++;
-//                   categoryCommands++;
-//                 }
-//               }
-//               // Subcommand biasa
-//               else {
-//                 commandEntry += `\n├─ \`/${command.data.name} ${opt.name}\``;
-//                 if (opt.description) commandEntry += ` - ${opt.description}`;
-//                 totalCommands++;
-//                 categoryCommands++;
-//               }
-//             }
-//             commandEntry += "\n└──────────────────";
-//           } else {
-//             totalCommands++;
-//             categoryCommands++;
-//           }
-
-//           commandList.push(commandEntry);
-//         }
-
-//         // Tambahkan ke embed jika ada perintah
-//         if (commandList.length > 0) {
-//           totalCategories++;
-//           // Discord embed field values have a max length of 1024 characters.
-//           // If the commandList.join("\n") is too long, split it into multiple fields.
-//           const MAX_FIELD_LENGTH = 1024;
-//           let joined = commandList.join("\n");
-//           if (joined.length <= MAX_FIELD_LENGTH) {
-//             categoryEmbed.addFields({
-//               name: `📌 Total: ${categoryCommands} Perintah`,
-//               value: joined,
-//               inline: false,
-//             });
-//           } else {
-//             // Split into chunks
-//             let chunks = [];
-//             let current = "";
-//             for (const entry of commandList) {
-//               if ((current + entry + "\n").length > MAX_FIELD_LENGTH) {
-//                 chunks.push(current);
-//                 current = "";
-//               }
-//               current += (current ? "\n" : "") + entry;
-//             }
-//             if (current) chunks.push(current);
-//             // Add each chunk as a field
-//             for (let idx = 0; idx < chunks.length; idx++) {
-//               categoryEmbed.addFields({
-//                 name: idx === 0 ? `📌 Total: ${categoryCommands} Perintah` : "\u200b",
-//                 value: chunks[idx],
-//                 inline: false,
-//               });
-//             }
-//           }
-//           embeds.push(categoryEmbed);
-//         }
-//       }
-
-//       // Update embed beranda
-//       // Replace only the first two "0" in the description with totalCommands and totalCategories
-//       let desc = embeds[0].data.description;
-//       let replaced = desc.replace("0", totalCommands.toString());
-//       replaced = replaced.replace("0", totalCategories.toString());
-//       embeds[0].setDescription(replaced);
-
-//       // Navigasi tombol
-//       const buttons = new ActionRowBuilder().addComponents(
-//         new ButtonBuilder().setCustomId("previous").setLabel("◀").setStyle(ButtonStyle.Secondary),
-//         new ButtonBuilder().setCustomId("home").setLabel("🏠 Beranda").setStyle(ButtonStyle.Primary),
-//         new ButtonBuilder().setCustomId("next").setLabel("▶").setStyle(ButtonStyle.Secondary)
-//       );
-
-//       const message = await interaction.reply({
-//         embeds: [embeds[0]],
-//         components: [buttons],
-//         ephemeral: true,
-//         fetchReply: true,
-//       });
-
-//       // Collector interaksi
-//       const collector = message.createMessageComponentCollector({ time: 120_000 });
-//       let currentPage = 0;
-
-//       collector.on("collect", async (i) => {
-//         if (i.user.id !== interaction.user.id) {
-//           return i.reply({ content: "❌ | Ini bukan interaksi Anda!", ephemeral: true });
-//         }
-
-//         switch (i.customId) {
-//           case "previous":
-//             currentPage = currentPage > 0 ? currentPage - 1 : embeds.length - 1;
-//             break;
-//           case "home":
-//             currentPage = 0;
-//             break;
-//           case "next":
-//             currentPage = currentPage < embeds.length - 1 ? currentPage + 1 : 0;
-//             break;
-//         }
-
-//         await i.update({ embeds: [embeds[currentPage]] });
-//       });
-
-//       collector.on("end", () => {
-//         message.edit({ components: [] }).catch(() => {});
-//       });
-//     } catch (error) {
-//       console.error("Error in /help:", error);
-//       new WebhookClient({ url: process.env.WEBHOOK_ERROR_LOGS }).send({
-//         embeds: [
-//           new EmbedBuilder()
-//             .setTitle("🚨 HELP COMMAND ERROR")
-//             .setDescription(`\`\`\`${error.stack}\`\`\``)
-//             .addFields({ name: "User", value: interaction.user.tag, inline: true }, { name: "Guild", value: interaction.guild.name, inline: true })
-//             .setTimestamp(),
-//         ],
-//       });
-//       interaction.reply({ content: "❌ Gagal menampilkan menu bantuan!", ephemeral: true });
-//     }
-//   },
-// };
-const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, ApplicationCommandOptionType, WebhookClient } = require("discord.js");
+const {
+  SlashCommandBuilder,
+  ActionRowBuilder,
+  StringSelectMenuBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  EmbedBuilder,
+  WebhookClient,
+} = require("discord.js");
 const fs = require("fs");
 const path = require("path");
-const BotSetting = require("../../database/models/BotSetting");
-const { checkPermission } = require("../../helpers");
 require("dotenv").config();
 
 module.exports = {
-  data: new SlashCommandBuilder().setName("help").setDescription("Menampilkan daftar perintah bot dengan paginasi."),
+  data: new SlashCommandBuilder()
+    .setName("help")
+    .setDescription("Menampilkan daftar perintah bot dengan detail super lengkap."),
 
   async execute(interaction) {
     await interaction.deferReply();
     try {
-      if (!interaction.guild) {
-        const embed = new EmbedBuilder()
-          .setColor("Blue")
-          .setTitle(`> <:kennmchead:1375315784456343572> hi there! need some help?`)
-          .setDescription(
-            `here's a list of what i can do for you!\n\n` +
-              `**🛠️ general commands**\n` +
-              `\`/help\` - show this help message\n` +
-              `\`/about\` - learn more about me\n` +
-              `\`/ping\` - check my response speed\n\n` +
-              `**🎮 fun commands**\n` +
-              `\`/hug\` - send a warm hug\n` +
-              `\`/kiss\` - send a sweet kiss\n` +
-              `\`/pat\` - gently pat someone\n\n` +
-              `**🔒 moderation commands**\n` +
-              `\`/mute\` - mute a member in voice\n` +
-              `\`/unmute\` - unmute a member in voice\n` +
-              `\`/ban\` - ban a member\n` +
-              `\`/kick\` - kick a member\n\n` +
-              `**⚙️ other features**\n` +
-              `some commands might only be available in servers, not in dms!\n\n` +
-              `want to invite me to your server? click the button below!`
-          )
-          .setThumbnail(interaction.client.user.displayAvatarURL())
-          .setFooter({
-            text: `thanks for using ${interaction.client.user.username}!`,
-            iconURL: interaction.client.user.displayAvatarURL(),
-          })
-          .setTimestamp();
+      const commandFolders = fs.readdirSync(path.join(__dirname, ".."));
 
-        const row = new ActionRowBuilder().addComponents(
-          new ButtonBuilder()
-            .setLabel("🚀 Invite Bot")
-            .setStyle(ButtonStyle.Link)
-            .setURL(`https://discord.com/oauth2/authorize?client_id=${interaction.client.user.id}&permissions=8&scope=bot+applications.commands`),
-          new ButtonBuilder().setLabel("🌐 Website").setStyle(ButtonStyle.Link).setURL("https://kenndeclouv.my.id")
-        );
+      const categories = [];
+      const pages = {};
+      let totalCommands = 0;
 
-        await interaction.editReply({ embeds: [embed], components: [row] });
-      } else if (interaction.guild) {
-        const setting = await BotSetting.getCache({ guildId: interaction.guild.id });
-        const commandFolders = fs.readdirSync(path.join(__dirname, ".."));
+      function smartSplit(content, maxLength = 4000) {
+        const chunks = [];
+        let remaining = content;
 
-        const embeds = [];
-        let totalCommands = 0;
+        while (remaining.length > maxLength) {
+          // Cari posisi newline terdekat sebelum maxLength
+          let splitIndex = remaining.lastIndexOf('\n', maxLength);
+          if (splitIndex === -1) splitIndex = remaining.lastIndexOf(' ', maxLength);
+          if (splitIndex === -1) splitIndex = maxLength;
 
-        const homeEmbed = new EmbedBuilder()
-          .setColor("#0099ff")
-          .setTitle("Selamat datang di menu bantuan bot!")
-          .setDescription(`Bot ini menyediakan berbagai perintah. Gunakan tombol di bawah untuk melihat daftar perintah dalam setiap kategori.`)
-          .setThumbnail(interaction.client.user.displayAvatarURL())
-          .setFooter({
-            text: "Klik tombol di bawah untuk melihat perintah dalam kategori ini",
-            iconURL: interaction.client.user.displayAvatarURL(),
-          });
-        embeds.push(homeEmbed);
+          // Pastikan ngga motong di tengah block code
+          const currentChunk = remaining.substring(0, splitIndex);
+          const openCodeBlocks = (currentChunk.match(/`/g) || []).length;
 
-        // Mapping lengkap semua fitur
-        const settingMap = {
-          antiinvite: "antiInviteOn",
-          antilink: "antiLinkOn",
-          antispam: "antiSpamOn",
-          antibadword: "antiBadwordOn",
-          serverstats: "serverStatsOn",
-          economy: "economyOn",
-          giveaway: "giveawayOn",
-          invites: "invitesOn",
-          suggestion: "suggestionOn",
-          ticket: "ticketOn",
-          pet: "petOn",
-          clan: "clanOn",
-          adventure: "adventureOn",
-          leveling: "levelingOn",
-          welcomein: "welcomeInOn",
-          welcomeout: "welcomeOutOn",
-          minecraftstats: "minecraftStatsOn",
-          nsfw: "nsfwOn",
-          checklist: "checklistOn",
-        };
-
-        for (const folder of commandFolders) {
-          const settingKey = settingMap[folder.toLowerCase()];
-          if (settingKey && !setting[settingKey]) continue;
-
-          const folderPath = path.join(__dirname, "..", folder);
-          if (!fs.statSync(folderPath).isDirectory()) continue;
-
-          const commandFiles = fs.readdirSync(folderPath).filter((file) => file.endsWith(".js"));
-          const embed = new EmbedBuilder().setColor("#0099ff").setTitle(`> Kategori ${folder}`).setThumbnail(interaction.client.user.displayAvatarURL()).setFooter({
-            text: "Klik tombol di bawah untuk melihat perintah dalam kategori ini",
-            iconURL: interaction.client.user.displayAvatarURL(),
-          });
-
-          let fieldCount = 0;
-
-          for (const file of commandFiles) {
-            const command = require(path.join(folderPath, file));
-
-            // Handle command data yang berbentuk function atau object
-            let cmdData;
-            try {
-              cmdData = typeof command.data === "function" ? command.data.toJSON() : command.data;
-            } catch (error) {
-              console.error(`Error processing command ${file}:`, error);
-              continue;
-            }
-
-            if (!cmdData?.name) continue;
-            if (command.adminOnly && !(await checkPermission(interaction.member))) continue;
-
-            // Proses command utama (jika tidak ada subcommand)
-            const options = cmdData.options || [];
-            const hasSubcommands = options.some((opt) => [ApplicationCommandOptionType.Subcommand, ApplicationCommandOptionType.SubcommandGroup].includes(opt.type));
-
-            // Jika tidak ada subcommand, tambahkan command utama
-            if (!hasSubcommands && fieldCount < 25) {
-              embed.addFields({
-                name: `**\`/${cmdData.name}\`**`,
-                value: cmdData.description || "Tidak ada deskripsi",
-              });
-              totalCommands++;
-              fieldCount++;
-            }
-
-            // Proses subcommands
-            for (const option of options) {
-              if (option.type === ApplicationCommandOptionType.Subcommand) {
-                if (fieldCount < 25) {
-                  embed.addFields({
-                    name: `**\`/${cmdData.name} ${option.name}\`**`,
-                    value: option.description || "Tidak ada deskripsi",
-                  });
-                  totalCommands++;
-                  fieldCount++;
-                }
-              } else if (option.type === ApplicationCommandOptionType.SubcommandGroup) {
-                for (const sub of option.options || []) {
-                  if (sub.type === ApplicationCommandOptionType.Subcommand && fieldCount < 25) {
-                    embed.addFields({
-                      name: `**\`/${cmdData.name} ${option.name} ${sub.name}\`**`,
-                      value: sub.description || "Tidak ada deskripsi",
-                    });
-                    totalCommands++;
-                    fieldCount++;
-                  }
-                }
-              }
+          if (openCodeBlocks % 2 !== 0) {
+            // Kalau block code belum ketutup, cari penutup berikutnya
+            const nextClose = remaining.indexOf('`', splitIndex);
+            if (nextClose !== -1 && nextClose - splitIndex <= maxLength - splitIndex) {
+              splitIndex = nextClose + 1; // Include penutup `
             }
           }
 
-          if (fieldCount > 0) {
-            embeds.push(embed);
-          }
+          chunks.push(remaining.substring(0, splitIndex).trim());
+          remaining = remaining.substring(splitIndex).trim();
         }
 
-        // Update deskripsi home embed
-        embeds[0].setDescription(
-          `Bot ini menyediakan berbagai perintah. Gunakan tombol di bawah untuk melihat daftar perintah dalam setiap kategori.\n\n` + `**Total perintah: \`${totalCommands}\`**\n\n**Perintah yang tersedia:**`
-        );
+        if (remaining.length > 0) chunks.push(remaining);
 
-        // Navigasi tombol
-        const buttons = new ActionRowBuilder().addComponents(
-          new ButtonBuilder()
-            .setCustomId("previous")
-            .setLabel("<<")
-            .setStyle(ButtonStyle.Primary)
-            .setDisabled(embeds.length <= 1),
-          new ButtonBuilder()
-            .setCustomId("home")
-            .setLabel("Beranda")
-            .setStyle(ButtonStyle.Secondary)
-            .setDisabled(embeds.length <= 1),
-          new ButtonBuilder()
-            .setCustomId("next")
-            .setLabel(">>")
-            .setStyle(ButtonStyle.Primary)
-            .setDisabled(embeds.length <= 1)
-        );
-
-        let currentPage = 0;
-        const message = await interaction.reply({
-          embeds: [embeds[currentPage]],
-          components: [buttons],
-          fetchReply: true,
-        });
-
-        // Collector interaksi
-        const collector = message.createMessageComponentCollector({ time: 60000 });
-
-        collector.on("collect", async (i) => {
-          // if (i.user.id !== interaction.user.id) {
-          //   return i.reply({ content: "❌ | Ini bukan interaksi Anda!", ephemeral: true });
-          // }
-
-          switch (i.customId) {
-            case "previous":
-              currentPage = (currentPage - 1 + embeds.length) % embeds.length;
-              break;
-            case "home":
-              currentPage = 0;
-              break;
-            case "next":
-              currentPage = (currentPage + 1) % embeds.length;
-              break;
-          }
-
-          await i.update({ embeds: [embeds[currentPage]] });
-        });
-
-        collector.on("end", () => {
-          interaction.editReply({ components: [] }).catch(() => {});
-        });
+        return chunks;
       }
+
+
+      const maxEmbedLength = 4000;
+
+      function splitContent(content, maxLength = 4000) {
+        const chunks = [];
+        for (let i = 0; i < content.length; i += maxLength) {
+          chunks.push(content.substring(i, i + maxLength));
+        }
+        return chunks;
+      }
+
+      function getMarkdownContent(category) {
+        const filePath = path.join(__dirname, "../../docs", `${category}.md`);
+        if (!fs.existsSync(filePath)) return ['📂 Dokumentasi belum tersedia untuk kategori ini.'];
+
+        let content = fs.readFileSync(filePath, "utf-8");
+        return smartSplit(content, maxEmbedLength);
+      }
+
+      for (const folder of commandFolders) {
+        const folderPath = path.join(__dirname, "..", folder);
+        if (!fs.statSync(folderPath).isDirectory()) continue;
+
+        const commandFiles = fs.readdirSync(folderPath).filter(file => file.endsWith(".js"));
+
+        if (commandFiles.length > 0) {
+          categories.push({ label: folder, value: folder });
+          totalCommands += commandFiles.length;
+
+          const markdownPages = getMarkdownContent(folder);
+
+          pages[folder] = markdownPages;
+        }
+      }
+
+      const homeEmbed = new EmbedBuilder()
+        .setColor("#5865F2")
+        .setTitle("> 🤖 **Bot Help Center**")
+        .setThumbnail(interaction.client.user.displayAvatarURL())
+        .setDescription(
+          `👋 **Selamat datang di pusat bantuan bot!**\n
+🔎 **Tips Cepat:**
+• Pilih kategori di bawah untuk melihat daftar perintah beserta penjelasannya.
+• Klik nama perintah untuk detail lebih lanjut (jika tersedia).
+• Gunakan \`/\` di chat untuk auto-complete perintah.
+
+📊 **Statistik:**
+> Total kategori: **${categories.length}**
+> Total perintah: **${totalCommands}**
+
+🆘 **Butuh bantuan lebih lanjut?**
+• Join support server: [Klik di sini](https://discord.gg/syGqdtsN)
+• Atau mention admin server.
+
+✨ **Selamat menjelajah fitur bot!**`
+        )
+        .addFields({ name: "📂 Cara Menggunakan", value: "Pilih kategori di bawah ini untuk melihat dokumentasi lengkap setiap perintah." })
+        .setFooter({
+          text: `Powered by ${interaction.client.user.username} • Pilih kategori di bawah ini`,
+          iconURL: interaction.client.user.displayAvatarURL(),
+        });
+
+      const selectMenu = new ActionRowBuilder().addComponents(
+        new StringSelectMenuBuilder()
+          .setCustomId("help-menu")
+          .setPlaceholder("Pilih kategori perintah")
+          .addOptions(categories)
+      );
+
+      const message = await interaction.editReply({ embeds: [homeEmbed], components: [selectMenu] });
+
+      const collector = message.createMessageComponentCollector({ time: 60000 });
+
+      const pageState = {};
+
+      collector.on("collect", async (i) => {
+        if (i.user.id !== interaction.user.id) {
+          return i.reply({ content: "❌ | Ini bukan interaksi Anda!", ephemeral: true });
+        }
+
+        if (i.isStringSelectMenu()) {
+          const selectedCategory = i.values[0];
+          pageState[i.user.id] = { category: selectedCategory, page: 0 };
+
+          const embed = new EmbedBuilder()
+            .setColor("Blue")
+            // .setTitle(`📂 Kategori: ${selectedCategory}`)
+            .setThumbnail(interaction.client.user.displayAvatarURL())
+            .setDescription(pages[selectedCategory][0])
+            .setFooter({
+              text: `Halaman 1 dari ${pages[selectedCategory].length}`,
+              iconURL: interaction.client.user.displayAvatarURL(),
+            });
+
+          const buttonRow = new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId("prev_page").setLabel("⏮️").setStyle(ButtonStyle.Secondary).setDisabled(true),
+            new ButtonBuilder().setCustomId("next_page").setLabel("⏭️").setStyle(ButtonStyle.Secondary).setDisabled(pages[selectedCategory].length <= 1)
+          );
+
+          await i.update({ embeds: [embed], components: [selectMenu, buttonRow] });
+        }
+
+        if (i.isButton()) {
+          const state = pageState[i.user.id];
+          if (!state) return i.reply({ content: "❌ | Tidak ada kategori yang sedang dipilih.", ephemeral: true });
+
+          const { category } = state;
+          let { page } = state;
+
+          if (i.customId === "prev_page") page--;
+          if (i.customId === "next_page") page++;
+
+          if (page < 0) page = 0;
+          if (page >= pages[category].length) page = pages[category].length - 1;
+
+          pageState[i.user.id].page = page;
+
+          const embed = new EmbedBuilder()
+            .setColor("Blue")
+            .setTitle(`📂 Kategori: ${category}`)
+            .setThumbnail(interaction.client.user.displayAvatarURL())
+            .setDescription(pages[category][page])
+            .setFooter({
+              text: `Halaman ${page + 1} dari ${pages[category].length}`,
+              iconURL: interaction.client.user.displayAvatarURL(),
+            });
+
+          const buttonRow = new ActionRowBuilder().addComponents(
+            new ButtonBuilder().setCustomId("prev_page").setLabel("⏮️").setStyle(ButtonStyle.Secondary).setDisabled(page === 0),
+            new ButtonBuilder().setCustomId("next_page").setLabel("⏭️").setStyle(ButtonStyle.Secondary).setDisabled(page === pages[category].length - 1)
+          );
+
+          await i.update({ embeds: [embed], components: [selectMenu, buttonRow] });
+        }
+      });
+
+      collector.on("end", () => {
+        interaction.editReply({ components: [] }).catch(() => { });
+      });
     } catch (error) {
       console.error("Error in /help command:", error);
       const webhook = new WebhookClient({ url: process.env.WEBHOOK_ERROR_LOGS });

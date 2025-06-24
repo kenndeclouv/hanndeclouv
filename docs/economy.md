@@ -1,226 +1,232 @@
-# 📁 Command: economy
+## 📁 Command: economy
 
-## /account
+### /account
 
 **Deskripsi:** Buat akun pengguna dan pilih jenis bank.
 
 ### Usage:
-`/account create [bank]`
-`/account edit [bank]`
+`/account create bank [bank]`
+`/account edit bank [bank]`
 
 ### Options:
+### Untuk perintah (create > bank):
 - `bank` (required) — Pilih jenis bank
-  - Pilihan: `BCA`, `BNI`, `BRI`, `Mandiri`, `Danamon`, `Permata`, `CIMB Niaga`, `Maybank`, `HSBC`, `DBS`, `OCBC`, `UOB`
-  - **Contoh Penggunaan:** `/account bank:BCA`
+  - Pilihan: `bca`, `bni`, `bri`, `mandiri`, `danamon`, `permata`, `cimbniaga`, `maybank`, `hsbc`, `dbs`, `ocbc`, `uob`
+  - **Contoh Penggunaan:** `/account create bank bank:bca`
+### Untuk perintah (edit > bank):
 - `bank` (required) — Pilih jenis bank baru
-  - Pilihan: `BCA`, `BNI`, `BRI`, `Mandiri`, `Danamon`, `Permata`, `CIMB Niaga`, `Maybank`, `HSBC`, `DBS`, `OCBC`, `UOB`
-  - **Contoh Penggunaan:** `/account bank:BCA`
+  - Pilihan: `bca`, `bni`, `bri`, `mandiri`, `danamon`, `permata`, `cimbniaga`, `maybank`, `hsbc`, `dbs`, `ocbc`, `uob`
+  - **Contoh Penggunaan:** `/account edit bank bank:bca`
 
 ---
 
 
-## /bank
+### /bank
 
 **Deskripsi:** Cek saldo bank kamu.
 
 ### Usage:
-`/bank`
 
 ---
 
 
-## /beg
+### /beg
 
 **Deskripsi:** Minta uang dari pengguna lain.
 
 ### Usage:
-`/beg`
 
 ---
 
 
-## /cash
+### /cash
 
 **Deskripsi:** Cek saldo tunai kamu.
 
 ### Usage:
-`/cash`
 
 ---
 
 
-## /coinflip
+### /coinflip
 
 **Deskripsi:** Flip koin dan coba keberuntungan kamu.
 
 ### Usage:
-`/coinflip [bet]`
-`/coinflip [side]`
+`/coinflip bet [bet]`
+`/coinflip side [side]`
 
 ### Options:
+### Untuk perintah (bet):
 - `bet` (required) — Jumlah untuk bertaruh
-  - **Contoh Penggunaan:** `/coinflip bet:[value]`
+  - **Contoh Penggunaan:** `/coinflip bet bet:[value]`
+### Untuk perintah (side):
 - `side` (required) — Heads atau Tails
-  - Pilihan: `Heads`, `Tails`
-  - **Contoh Penggunaan:** `/coinflip side:Heads`
+  - Pilihan: `heads`, `tails`
+  - **Contoh Penggunaan:** `/coinflip side side:heads`
 
 ---
 
 
-## /daily
+### /daily
 
 **Deskripsi:** Kumpulkan uang harian kamu.
 
 ### Usage:
-`/daily`
 
 ---
 
 
-## /deposit
+### /deposit
 
 **Deskripsi:** Simpan uang tunai kamu ke bank.
 
 ### Usage:
-`/deposit [type]`
-`/deposit [amount]`
+`/deposit type [type]`
+`/deposit amount [amount]`
 
 ### Options:
+### Untuk perintah (type):
 - `type` (required) — Pilih jenis setor: semua atau sebagian
-  - Pilihan: `Setor Semua`, `Setor Sebagian`
-  - **Contoh Penggunaan:** `/deposit type:Setor Semua`
+  - Pilihan: `all`, `partial`
+  - **Contoh Penggunaan:** `/deposit type type:all`
+### Untuk perintah (amount):
 - `amount` — Jumlah untuk menyimpan
-  - **Contoh Penggunaan:** `/deposit amount:[value]`
+  - **Contoh Penggunaan:** `/deposit amount amount:[value]`
 
 ---
 
 
-## /give
+### /give
 
 **Deskripsi:** Berikan uang kepada pengguna lain.
 
 ### Usage:
-`/give [target]`
-`/give [amount]`
+`/give target [target]`
+`/give amount [amount]`
 
 ### Options:
+### Untuk perintah (target):
 - `target` (required) — Pengguna untuk memberikan uang
-  - **Contoh Penggunaan:** `/give target:[value]`
+  - **Contoh Penggunaan:** `/give target target:[value]`
+### Untuk perintah (amount):
 - `amount` (required) — Jumlah uang untuk memberikan
-  - **Contoh Penggunaan:** `/give amount:[value]`
+  - **Contoh Penggunaan:** `/give amount amount:[value]`
 
 ---
 
 
-## /hack
+### /hack
 
 **Deskripsi:** Hack user lain.
 
 ### Usage:
-`/hack [target]`
+`/hack target [target]`
 
 ### Options:
+### Untuk perintah (target):
 - `target` (required) — User yang ingin di hack
-  - **Contoh Penggunaan:** `/hack target:[value]`
+  - **Contoh Penggunaan:** `/hack target target:[value]`
 
 ---
 
 
-## /inventory
+### /inventory
 
 **Deskripsi:** Lihat semua item di inventaris kamu.
 
 ### Usage:
-`/inventory`
 
 ---
 
 
-## /lootbox
+### /lootbox
 
 **Deskripsi:** Buka kotak hadiah untuk mendapatkan hadiah acak.
 
 ### Usage:
-`/lootbox`
 
 ---
 
 
-## /rob
+### /rob
 
 **Deskripsi:** Coba mencuri uang dari pengguna lain.
 
 ### Usage:
-`/rob [target]`
+`/rob target [target]`
 
 ### Options:
+### Untuk perintah (target):
 - `target` (required) — Pengguna yang ingin kamu mencuri
-  - **Contoh Penggunaan:** `/rob target:[value]`
+  - **Contoh Penggunaan:** `/rob target target:[value]`
 
 ---
 
 
-## /shop
+### /shop
 
 **Deskripsi:** Lihat dan beli item dari toko.
 
 ### Usage:
-`/shop`
 
 ---
 
 
-## /slots
+### /slots
 
 **Deskripsi:** Mainkan mesin slot dan coba keberuntungan kamu. (JUDI HARAM BOY!)
 
 ### Usage:
-`/slots [bet]`
+`/slots bet [bet]`
 
 ### Options:
+### Untuk perintah (bet):
 - `bet` (required) — Jumlah untuk bertaruh
-  - **Contoh Penggunaan:** `/slots bet:[value]`
+  - **Contoh Penggunaan:** `/slots bet bet:[value]`
 
 ---
 
 
-## /transfer
+### /transfer
 
 **Deskripsi:** Transfer uang kepada pengguna lain.
 
 ### Usage:
-`/transfer [target]`
-`/transfer [amount]`
+`/transfer target [target]`
+`/transfer amount [amount]`
 
 ### Options:
+### Untuk perintah (target):
 - `target` (required) — Pengguna untuk mentransfer uang
-  - **Contoh Penggunaan:** `/transfer target:[value]`
+  - **Contoh Penggunaan:** `/transfer target target:[value]`
+### Untuk perintah (amount):
 - `amount` (required) — Jumlah uang untuk mentransfer
-  - **Contoh Penggunaan:** `/transfer amount:[value]`
+  - **Contoh Penggunaan:** `/transfer amount amount:[value]`
 
 ---
 
 
-## /withdraw
+### /withdraw
 
 **Deskripsi:** Tarik uang tunai kamu dari bank.
 
 ### Usage:
-`/withdraw [amount]`
+`/withdraw amount [amount]`
 
 ### Options:
+### Untuk perintah (amount):
 - `amount` (required) — Jumlah untuk menarik uang
-  - **Contoh Penggunaan:** `/withdraw amount:[value]`
+  - **Contoh Penggunaan:** `/withdraw amount amount:[value]`
 
 ---
 
 
-## /work
+### /work
 
 **Deskripsi:** Bekerja untuk mendapatkan uang.
 
 ### Usage:
-`/work`
 
 ---
 

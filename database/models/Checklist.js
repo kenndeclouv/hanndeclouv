@@ -6,7 +6,8 @@ class Checklist extends CacheableModel {
   static init(sequelize) {
     super.init(
       {
-        guildId: { type: DataTypes.STRING, allowNull: false, unique: true },
+        guildId: { type: DataTypes.STRING, allowNull: false },
+        userId: { type: DataTypes.STRING, allowNull: false },
         items: { type: DataTypes.JSON, allowNull: false, defaultValue: "[]" }, // JSON string of checklist items
       },
       {

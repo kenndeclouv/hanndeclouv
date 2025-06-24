@@ -9,7 +9,10 @@ class Ticket extends CacheableModel {
         guildId: { type: DataTypes.STRING, allowNull: false },
         userId: { type: DataTypes.STRING, allowNull: false },
         channelId: { type: DataTypes.STRING, allowNull: false },
-        
+
+        name: { type: DataTypes.STRING, allowNull: true },
+        format: { type: DataTypes.STRING, allowNull: true },
+
         ticketNumber: { type: DataTypes.STRING, allowNull: true },
         conversation: { type: DataTypes.JSON, defaultValue: "[]" },
         status: { type: DataTypes.ENUM("open", "closed"), defaultValue: "open" },

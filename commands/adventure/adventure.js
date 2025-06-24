@@ -13,16 +13,14 @@ module.exports = {
     .addSubcommand((subcommand) => subcommand.setName("inventory").setDescription("Cek barangmu!"))
     .addSubcommand((subcommand) => subcommand.setName("recall").setDescription("Kembali ke kota!"))
     .addSubcommand((subcommand) => subcommand.setName("shop").setDescription("Beli item di toko!")),
-  // .addSubcommand((subcommand) => subcommand.setName("enter-domain").setDescription("Beli item di toko!")),
 
   async execute(interaction) {
     if (!interaction.guild) {
       return interaction.reply({
-        content: "🚫 | This command can't use here😭",
-        ephemeral: true,
+        content: "🚫 | This command can't use here😭"
       });
     }
-    await interaction.channel.sendTyping();
+    await interaction.deferReply();
 
     try {
       const subcommand = interaction.options.getSubcommand();
@@ -42,14 +40,12 @@ module.exports = {
             strength: 10,
             defense: 5,
           });
-          return interaction.reply({
-            content: `✨ Karaktermu berhasil dibuat! Kamu siap untuk memulai petualanganmu! 🎉`,
-            ephemeral: true,
+          return interaction.editReply({
+            content: `✨ Karaktermu berhasil dibuat! Kamu siap untuk memulai petualanganmu! 🎉`
           });
         } else {
-          return interaction.reply({
-            content: "❌ Kamu belum punya karakter! Gunakan `/adventure start` dulu!",
-            ephemeral: true,
+          return interaction.editReply({
+            content: "❌ Kamu belum punya karakter! Gunakan `/adventure start` dulu!"
           });
         }
       }
@@ -57,53 +53,242 @@ module.exports = {
       switch (subcommand) {
         case "start": {
           const embed = new EmbedBuilder()
-            .setTitle(`> Petualanganmu dimulai!`)
-            .setDescription(`🎉 Kamu siap untuk memulai petualanganmu!`)
+            // .setTitle(`> Petualanganmu dimulai!`)
+            .setDescription(`## 🎉 Petualanganmu dimulai!\nKamu siap untuk memulai petualanganmu!`)
             .setColor("Blue")
             .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
             .setFooter({ text: "Petualanganmu dimulai dari sini!", iconURL: interaction.user.displayAvatarURL({ dynamic: true }) })
             .setTimestamp();
-          return interaction.reply({ embeds: [embed], ephemeral: true });
+          return interaction.editReply({ embeds: [embed] });
         }
 
         case "stats": {
+          // Emoji for each stat
+          const statEmojis = {
+            level: "🆙",
+            xp: "✨",
+            hp: "💖",
+            gold: "💰",
+            strength: "⚔️",
+            defense: "🛡️"
+          };
+
+          // Progress bar for XP (assuming 100xp per level for demo)
+          const xpForNextLevel = 100 * user.level;
+          const xpProgress = Math.min(user.xp / xpForNextLevel, 1);
+          const progressBarLength = 20;
+          const filledLength = Math.round(progressBarLength * xpProgress);
+          const progressBar = `▰`.repeat(filledLength) + `▱`.repeat(progressBarLength - filledLength);
+
           const embed = new EmbedBuilder()
-            .setTitle(`> Stats Karakter ${interaction.user.username}`)
-            .setDescription(`**Level:** ${user.level}\n**XP:** ${user.xp}\n**HP:** ${user.hp}\n**Gold:** ${user.gold}\n**Strength:** ${user.strength}\n**Defense:** ${user.defense}`)
             .setColor("Blue")
+            // .setAuthor({ name: `${interaction.user.username}'s Stats`, iconURL: interaction.user.displayAvatarURL({ dynamic: true }) })
             .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
-            .setFooter({ text: "Stats karaktermu!", iconURL: interaction.user.displayAvatarURL({ dynamic: true }) })
+            .setDescription(`## 🌟 Stats Karakter ${interaction.user.username}\n Berikut adalah statistik karaktermu, tetap semangat meningkatkan levelnya!`)
+            .addFields(
+              { name: `${statEmojis.level} Level`, value: `**${user.level}**`, inline: true },
+              { name: `${statEmojis.hp} HP`, value: `**${user.hp}**`, inline: true },
+
+              { name: `${statEmojis.gold} Gold`, value: `**${user.gold}**`, inline: true },
+              { name: `${statEmojis.strength} Strength`, value: `**${user.strength}**`, inline: true },
+
+              { name: `${statEmojis.defense} Defense`, value: `**${user.defense}**`, inline: true },
+              { name: '\u200B', value: '\u200B', inline: true }, // biar tetep 2 kolom rata
+
+              { name: `${statEmojis.xp} XP Progress`, value: `${user.xp} / ${xpForNextLevel}\n${progressBar}`, inline: false }
+            )
+            .setFooter({ text: "📊 Stats karaktermu!", iconURL: interaction.client.user.displayAvatarURL({ dynamic: true }) })
             .setTimestamp();
-          return interaction.reply({ embeds: [embed], ephemeral: true });
+
+          return interaction.editReply({ embeds: [embed] });
         }
 
         case "inventory": {
-          // const inventory = await Inventory.findAll({ where: { userId } });
           const inventory = await Inventory.getAllCache({ userId: userId });
+
           if (inventory.length === 0) {
             const embed = new EmbedBuilder()
-              .setTitle(`> Inventorimu ${interaction.user.username}`)
-              .setDescription("🔍 Inventorimu kosong!")
               .setColor("Blue")
+              .setDescription(`## 🔍 Inventorimu kosong!\nKamu bisa mengambil item di sini!`)
               .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
               .setFooter({ text: "Kamu bisa mengambil item di sini!", iconURL: interaction.user.displayAvatarURL({ dynamic: true }) })
               .setTimestamp();
-            return interaction.reply({ embeds: [embed], ephemeral: true });
-          }
-          const items = inventory.map((item) => `${item.itemName}`).join("\n");
-          const embed = new EmbedBuilder()
-            .setTitle(`> Inventorimu ${interaction.user.username}`)
-            .setDescription(`List Inventorimu:\n${items}`)
-            .setColor("Blue")
-            .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
-            .setFooter({ text: "Kamu bisa mengambil item di sini!", iconURL: interaction.user.displayAvatarURL({ dynamic: true }) })
-            .setTimestamp();
-          return interaction.reply({ embeds: [embed], ephemeral: true });
-        }
-        case "battle": {
-          await interaction.deferReply({ ephemeral: true });
 
-          // jika monster belum ada, buat monster baru
+            return interaction.editReply({ embeds: [embed] });
+          }
+
+          // hitung jumlah item
+          const itemCount = {};
+          inventory.forEach((item) => {
+            if (itemCount[item.itemName]) {
+              itemCount[item.itemName]++;
+            } else {
+              itemCount[item.itemName] = 1;
+            }
+          });
+
+          // susun list
+          const itemList = Object.entries(itemCount)
+            .map(([itemName, count]) => `${itemName} x${count}`)
+            .join("\n");
+
+          const embed = new EmbedBuilder()
+            .setColor("Blue")
+            .setTitle(`## 🎒 Inventorimu ${interaction.user.username}`)
+            .setDescription(`Berikut adalah isi inventorimu:\n\n${itemList}`)
+            .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
+            .setFooter({ text: "Gunakan itemmu dengan bijak!", iconURL: interaction.user.displayAvatarURL({ dynamic: true }) })
+            .setTimestamp();
+
+          return interaction.editReply({ embeds: [embed] });
+        }
+
+
+        case "battle": {
+          // Progress bar generator
+          const generateHpBar = (currentHp, maxHp = 100, barLength = 20) => {
+            const hpPercent = Math.max(0, currentHp / maxHp);
+            const filledLength = Math.round(barLength * hpPercent);
+            return `[${'▰'.repeat(filledLength)}${'▱'.repeat(barLength - filledLength)}] ${currentHp} HP`;
+          };
+
+          // Function to handle a single round of battle and return the result
+          const handleBattleRound = async (interaction, user, items) => {
+            const sword = items.find((item) => item?.itemName === "⚔️ Sword");
+            const shield = items.find((item) => item?.itemName === "🛡️ Shield");
+            const armor = items.find((item) => item?.itemName === "🥋 Armor");
+            const revival = items.find((item) => item?.itemName === "🍶 Revival");
+
+            let userStrength = user.strength + (sword ? 15 : 0);
+            let userDefense = user.defense + (shield ? 10 : 0) + (armor ? 15 : 0);
+
+            const playerDamage = Math.max(0, userStrength - Math.floor(Math.random() * 5));
+            const monsterDamage = Math.max(0, user.monsterStrength - Math.floor(Math.random() * userDefense));
+
+            user.hp = Math.max(0, user.hp - monsterDamage);
+            user.monsterHp = Math.max(0, user.monsterHp - playerDamage);
+            await user.saveAndUpdateCache();
+
+            const embed = new EmbedBuilder().setTimestamp().setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }));
+
+            // Button to continue the adventure
+            const continueButton = new ActionRowBuilder().addComponents(
+              new ButtonBuilder()
+                .setCustomId("adventure_continue")
+                .setLabel("Lanjutkan Petualangan")
+                .setStyle(ButtonStyle.Primary)
+            );
+
+            // Kalau user kalah
+            if (user.hp <= 0) {
+              if (revival) {
+                revival.destroy();
+                Inventory.clearCache({
+                  guildId: user.guildId,
+                  userId: user.userId,
+                  itemName: "🍶 Revival",
+                });
+                return {
+                  embeds: [
+                    embed
+                      // .setTitle(`> Kamu Bangkit!`)
+                      .setDescription(`## 😇 Kamu Bangkit!\nKamu dibangkitkan oleh 🍶 Revival.\nKamu siap bertarung lagi!`)
+                      .setColor("Green")
+                      .setFooter({ text: "Petualanganmu belum berakhir!", iconURL: interaction.client.user.displayAvatarURL({ dynamic: true }) }),
+                  ],
+                  components: [continueButton],
+                  end: false
+                };
+              }
+
+              user.hp = Math.floor(100 * (1 + user.level * 0.1));
+              user.monsterName = null;
+              await user.saveAndUpdateCache();
+              return {
+                embeds: [
+                  embed
+                    // .setTitle(`> Kamu Kalah!`)
+                    .setDescription(`## 💀 Kamu Kalah!\nKamu dikalahkan monster! Tapi kamu bangkit lagi dengan **${user.hp} HP**.`)
+                    .setColor("Red")
+                    .setFooter({ text: "Petualanganmu belum berakhir!", iconURL: interaction.client.user.displayAvatarURL({ dynamic: true }) }),
+                ],
+                components: [continueButton],
+                end: true
+              };
+            }
+
+            // Kalau monster mati
+            if (user.monsterHp <= 0) {
+              const goldEarned = user.monsterGoldDrop;
+              const xpEarned = user.monsterXpDrop;
+              const monsterName = user.monsterName;
+
+              user.xp += xpEarned;
+              user.gold += goldEarned;
+
+              user.monsterName = null;
+              user.monsterHp = 0;
+              user.monsterStrength = 0;
+              user.monsterGoldDrop = 0;
+              user.monsterXpDrop = 0;
+
+              const XP_REQUIRED = 50 * Math.pow(2, user.level - 1);
+              if (user.xp >= XP_REQUIRED) {
+                user.level++;
+                user.strength += 5;
+                user.defense += 3;
+                user.hp = 100;
+                await user.saveAndUpdateCache();
+                return {
+                  embeds: [
+                    embed
+                      // .setTitle(`> Level Up!`)
+                      .setDescription(`## 🎉 Level Up!\nKamu naik ke level **${user.level}**!\nStatistikmu meningkat! 💪`)
+                      .setColor("Green")
+                      .setFooter({ text: "Teruskan petualanganmu!", iconURL: interaction.user.displayAvatarURL({ dynamic: true }) }),
+                  ],
+                  components: [continueButton],
+                  end: true
+                };
+              }
+
+              await user.saveAndUpdateCache();
+              return {
+                embeds: [
+                  embed
+                    // .setTitle(`> Kamu Menang!`)
+                    .setDescription(`## 🎉 Kamu Menang!\nKamu mengalahkan **${monsterName}**!\nKamu mendapatkan **${goldEarned} gold** dan **${xpEarned} XP**!`)
+                    .setColor("Green")
+                    .setFooter({ text: "Teruskan petualanganmu!", iconURL: interaction.user.displayAvatarURL({ dynamic: true }) }),
+                ],
+                components: [continueButton],
+                end: true
+              };
+            }
+
+            // Battle masih lanjut
+            return {
+              embeds: [
+                embed
+                  // .setTitle(`⚔️ Pertarungan Berlanjut!`)
+                  .setDescription(
+                    `## ⚔️ Adventure Battle!\n` +
+                    `**${interaction.user.username}** menyerang **${user.monsterName}**, memberikan **${playerDamage}** damage!\n` +
+                    `**${user.monsterName}** menyerang balik, memberikan **${monsterDamage}** damage!`
+                  )
+                  .setColor("Blue")
+                  .addFields(
+                    { name: `💖 HP Kamu`, value: generateHpBar(user.hp), inline: false },
+                    { name: `👹 HP ${user.monsterName}`, value: generateHpBar(user.monsterHp), inline: false }
+                  )
+                  .setFooter({ text: "Teruskan petualanganmu!", iconURL: interaction.user.displayAvatarURL({ dynamic: true }) }),
+              ],
+              components: [continueButton],
+              end: false
+            };
+          };
+
+          // Jika monster belum ada, buat monster baru
           if (!user.monsterName) {
             const monster = getRandomMonster(user.level);
             user.monsterName = monster.name;
@@ -111,11 +296,9 @@ module.exports = {
             user.monsterStrength = monster.strength;
             user.monsterGoldDrop = monster.goldDrop;
             user.monsterXpDrop = monster.xpDrop;
-            // await user.save();
             await user.saveAndUpdateCache();
           }
 
-          // cek inventory dengan await
           const items = await Inventory.getCache([
             { guildId: guildId, userId: userId, itemName: "⚔️ Sword" },
             { guildId: guildId, userId: userId, itemName: "🛡️ Shield" },
@@ -123,132 +306,66 @@ module.exports = {
             { guildId: guildId, userId: userId, itemName: "🍶 Revival" },
           ]);
 
-          // Handle item tidak ditemukan
-          const sword = items.find((item) => item?.itemName === "⚔️ Sword");
-          const shield = items.find((item) => item?.itemName === "🛡️ Shield");
-          const armor = items.find((item) => item?.itemName === "🥋 Armor");
-          const revival = items.find((item) => item?.itemName === "🍶 Revival");
+          // First round
+          const result = await handleBattleRound(interaction, user, items);
 
-          // hitung strength dan defense berdasarkan inventory
-          let userStrength = user.strength + (sword ? 15 : 0);
-          let userDefense = user.defense + (shield ? 10 : 0) + (armor ? 15 : 0);
-
-          // hitung damage
-          const playerDamage = Math.max(0, userStrength - Math.floor(Math.random() * 5));
-          const monsterDamage = Math.max(0, user.monsterStrength - Math.floor(Math.random() * userDefense));
-
-          // update HP user dan monster
-          user.hp = Math.max(0, user.hp - monsterDamage);
-          user.monsterHp = Math.max(0, user.monsterHp - playerDamage);
-
-          // await user.save(); // simpan perubahan HP
-          await user.saveAndUpdateCache(); // simpan perubahan HP
-
-          const embed = new EmbedBuilder().setTimestamp().setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }));
-
-          // jika user kalah
-          if (user.hp <= 0) {
-            if (revival) {
-              revival.destroy();
-              Inventory.clearCache({
-                guildId: user.guildId,
-                userId: user.userId,
-                itemName: "🍶 Revival",
-              });
-              return interaction.editReply({
-                embeds: [
-                  embed
-                    .setTitle(`> Kamu Bangkit!`)
-                    .setDescription(`😇 Kamu dibangkitkan karena memiliki item 🍶 Revival.`)
-                    .setColor("Green")
-                    .setFooter({ text: "Petualanganmu belum berakhir!", iconURL: interaction.client.user.displayAvatarURL({ dynamic: true }) }),
-                ],
-              });
-            }
-            // user.hp = 50; // regenerate HP
-            user.hp = Math.floor(100 * (1 + user.level * 0.1));
-            user.monsterName = null; // reset monster
-            // await user.save();
-            await user.saveAndUpdateCache();
-            return interaction.editReply({
-              embeds: [
-                embed
-                  .setTitle(`> Kamu kalah!`)
-                  .setDescription(`💀 Kamu kalah! Monster berhasil mengalahkanmu, tapi kamu bangkit lagi dengan **50 HP**.`)
-                  .setColor("Red")
-                  .setFooter({ text: "Petualanganmu belum berakhir!", iconURL: interaction.client.user.displayAvatarURL({ dynamic: true }) }),
-              ],
-            });
-          }
-
-          // jika monster mati
-          if (user.monsterHp <= 0) {
-            const goldEarned = user.monsterGoldDrop;
-            const xpEarned = user.monsterXpDrop;
-            const monsterName = user.monsterName; // simpan nama monster sebelum reset
-
-            // tambah XP dan gold
-            user.xp += xpEarned;
-            user.gold += goldEarned;
-
-            // reset monster
-            user.monsterName = null;
-            user.monsterHp = 0;
-            user.monsterStrength = 0;
-            user.monsterGoldDrop = 0;
-            user.monsterXpDrop = 0;
-
-            // cek level up
-            const XP_REQUIRED = 50 * Math.pow(2, user.level - 1);
-            if (user.xp >= XP_REQUIRED) {
-              user.level++;
-              user.strength += 5;
-              user.defense += 3;
-              user.hp = 100;
-              // await user.save();
-              await user.saveAndUpdateCache();
-              return interaction.editReply({
-                embeds: [
-                  embed
-                    .setTitle(`> Level Up!`)
-                    .setDescription(`🎉 Kamu naik ke level **${user.level}**! Statsmu meningkat!`)
-                    .setColor("Green")
-                    .setFooter({ text: "Teruskan petualanganmu!", iconURL: interaction.user.displayAvatarURL({ dynamic: true }) }),
-                ],
-              });
-            }
-
-            // await user.save();
-            await user.saveAndUpdateCache();
-            return interaction.editReply({
-              embeds: [
-                embed
-                  .setTitle(`> Kamu menang!`)
-                  .setDescription(`🎉 Kamu berhasil mengalahkan ${monsterName}! Kamu mendapatkan ${goldEarned} gold dan ${xpEarned} XP!`)
-                  .setColor("Green")
-                  .setFooter({ text: "Teruskan petualanganmu!", iconURL: interaction.user.displayAvatarURL({ dynamic: true }) }),
-              ],
-            });
-          }
-
-          // default jika battle belum selesai
-          return interaction.editReply({
-            embeds: [
-              embed
-                .setTitle(`> Kamu menyerang monster`)
-                .setDescription(
-                  `**${interaction.user.username}** menyerang ${user.monsterName}, memberikan ${playerDamage} damage! Tapi ${user.monsterName} menyerang balik, memberikan ${monsterDamage} damage!`
-                )
-                .setColor("Blue")
-                .addFields({ name: "💖 HP Kamu", value: `${user.hp}`, inline: true })
-                .addFields({ name: "👹 HP Monster", value: `${user.monsterHp}`, inline: true })
-                .setFooter({ text: "Teruskan petualanganmu!", iconURL: interaction.user.displayAvatarURL({ dynamic: true }) }),
-            ],
+          // Send the initial reply and set up the collector
+          const reply = await interaction.editReply({
+            embeds: result.embeds,
+            components: result.components,
+            fetchReply: true
           });
+
+          // If the battle ended (user lost or monster died), don't set up a collector
+          if (result.end) return;
+
+          // Set up a collector for the continue button
+          const filter = (i) => i.customId === "adventure_continue" && i.user.id === interaction.user.id;
+          const collector = reply.createMessageComponentCollector({ filter, time: 60_000 });
+
+          collector.on("collect", async (i) => {
+            await i.deferUpdate();
+
+            // Re-fetch user and items for up-to-date stats
+            const freshUser = await User.getCache({ guildId, userId });
+            const freshItems = await Inventory.getCache([
+              { guildId: guildId, userId: userId, itemName: "⚔️ Sword" },
+              { guildId: guildId, userId: userId, itemName: "🛡️ Shield" },
+              { guildId: guildId, userId: userId, itemName: "🥋 Armor" },
+              { guildId: guildId, userId: userId, itemName: "🍶 Revival" },
+            ]);
+
+            const nextResult = await handleBattleRound(i, freshUser, freshItems);
+
+            await interaction.editReply({
+              embeds: nextResult.embeds,
+              components: nextResult.end ? [] : nextResult.components,
+            });
+
+            if (nextResult.end) collector.stop("battle_end");
+          });
+
+          collector.on("end", async (_, reason) => {
+            if (reason !== "battle_end") {
+              // Disable the button if time runs out
+              const disabledRow = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                  .setCustomId("adventure_continue")
+                  .setLabel("Lanjutkan Petualangan")
+                  .setStyle(ButtonStyle.Primary)
+                  .setDisabled(true)
+              );
+              await interaction.editReply({
+                components: [disabledRow],
+              });
+            }
+          });
+
+          return;
         }
 
         case "recall": {
-          await interaction.deferReply({ ephemeral: true });
+          // await interaction.deferReply();
           user.hp = Math.floor(100 * (1 + user.level * 0.1));
           user.monsterName = null;
           user.monsterHp = 0;
@@ -258,8 +375,8 @@ module.exports = {
           // await user.save();
           await user.saveAndUpdateCache();
           const embed = new EmbedBuilder()
-            .setTitle(`> Kamu recall!`)
-            .setDescription("🏠 Kamu recall dan kembali ke kota!")
+            // .setTitle(`> Kamu recall!`)
+            .setDescription(`## 🏠 Recall\nKamu recall dan kembali ke kota!\nHP kamu diisi kembali!`)
             .setColor("Blue")
             .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
             .setFooter({ text: "Kamu kembali ke kota!", iconURL: interaction.user.displayAvatarURL({ dynamic: true }) })
@@ -267,29 +384,151 @@ module.exports = {
           return interaction.editReply({ embeds: [embed] });
         }
 
+        // case "shop": {
+        //   try {
+        //     if (!user) {
+        //       return interaction.editReply({ content: "kamu belum memiliki akun gunakan `/adventure start` untuk membuat akun." });
+        //     }
+
+        //     const items = [
+        //       { name: "🛡️ Shield", price: 10, description: "Perisai yang kokoh untuk melindungi diri memberikan defense +10." },
+        //       { name: "⚔️ Sword", price: 15, description: "Pedang yang kuat untuk bertarung melawan monster memberikan strength +10." },
+        //       { name: "🥋 Armor", price: 30, description: "Armor yang kokoh untuk melindungi diri memberikan defense +15." },
+        //       { name: "🍶 Revival", price: 35, description: "Menghidupkan kembali tanpa harus mati HP +100." },
+        //     ];
+
+        //     const embed = new EmbedBuilder()
+        //       .setColor("Blue")
+        //       // .setTitle("> Toko")
+        //       .setDescription(`## 🛒 Shop\nSelamat datang di toko adventure! Pilih item yang ingin kamu beli:`)
+        //       .setTimestamp()
+        //       .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+
+        //     items.forEach((item) => {
+        //       embed.addFields({ name: `${item.name}`, value: `Harga: **${item.price}** gold\n${item.description}`, inline: true });
+        //     });
+
+        //     const row = new ActionRowBuilder().addComponents(
+        //       new StringSelectMenuBuilder()
+        //         .setCustomId("select_item_adventure")
+        //         .setPlaceholder("Pilih item untuk dibeli")
+        //         .addOptions(
+        //           items.map((item) => ({
+        //             label: item.name,
+        //             description: `Harga: ${item.price} gold`,
+        //             value: item.name.toLowerCase(),
+        //           }))
+        //         )
+        //     );
+
+        //     await interaction.editReply({ embeds: [embed], components: [row] });
+
+        //     const filter = (i) => i.user.id === interaction.user.id;
+        //     const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000 });
+
+        //     collector.on("collect", async (i) => {
+        //       if (i.customId === "select_item_adventure") {
+        //         await i.deferUpdate();
+        //         const selectedItem = items.find((item) => item.name.toLowerCase() === i.values[0]);
+
+        //         if (!selectedItem) return;
+
+        //         if (user.gold < selectedItem.price) {
+        //           await interaction.editReply({
+        //             content: "kamu tidak memiliki gold yang cukup untuk membeli item ini.",
+        //             embeds: [], // hapus embed
+        //             components: [],
+        //           });
+        //           return;
+        //         }
+
+        //         const confirmRow = new ActionRowBuilder().addComponents(
+        //           new ButtonBuilder().setCustomId("confirm_purchase_adventure").setLabel("Konfirmasi Pembelian").setStyle(ButtonStyle.Success),
+        //           new ButtonBuilder().setCustomId("cancel_purchase_adventure").setLabel("Batal").setStyle(ButtonStyle.Danger)
+        //         );
+
+        //         await interaction.editReply({
+        //           content: `kamu akan membeli **${selectedItem.name}** seharga **${selectedItem.price} gold**. Konfirmasi pembelian?`,
+        //           embeds: [], // hapus embed
+        //           components: [confirmRow],
+        //         });
+
+        //         const confirmationFilter = (btn) => btn.user.id === interaction.user.id;
+        //         const confirmationCollector = interaction.channel.createMessageComponentCollector({ filter: confirmationFilter, time: 15000, max: 1 });
+
+        //         confirmationCollector.on("collect", async (btn) => {
+        //           await btn.deferUpdate();
+        //           if (btn.customId === "confirm_purchase_adventure") {
+        //             user.gold -= selectedItem.price;
+        //             // await user.save();
+        //             await user.saveAndUpdateCache();
+
+        //             await Inventory.create({
+        //               guildId: user.guildId,
+        //               userId: user.userId,
+        //               itemName: selectedItem.name,
+        //             });
+        //             await Inventory.clearCache({ userId: user.userId });
+        //             await interaction.editReply({
+        //               content: `kamu berhasil membeli **${selectedItem.name}**!`,
+        //               embeds: [], // hapus embed
+        //               components: [],
+        //             });
+        //           } else if (btn.customId === "cancel_purchase_adventure") {
+        //             await interaction.editReply({
+        //               content: "Pembelian dibatalkan.",
+        //               embeds: [], // hapus embed
+        //               components: [],
+        //             });
+        //           }
+        //         });
+
+        //         confirmationCollector.on("end", () => {
+        //           interaction.editReply({
+        //             components: [],
+        //           });
+        //         });
+        //       }
+        //     });
+
+        //     collector.on("end", () => {
+        //       interaction.editReply({
+        //         content: "Waktu habis. Silakan gunakan kembali perintah `/adventure shop` untuk mengakses toko.",
+        //         embeds: [], // hapus embed
+        //         components: [],
+        //       });
+        //     });
+        //   } catch (error) {
+        //     console.error("Error during shop command execution:", error);
+        //     return interaction.editReply({ content: "❌ Terjadi kesalahan saat menjalankan perintah ini. Silakan coba lagi." });
+        //   }
+        // }
         case "shop": {
-          await interaction.deferReply({ ephemeral: true });
           try {
             if (!user) {
-              return interaction.editReply({ content: "kamu belum memiliki akun gunakan `/adventure start` untuk membuat akun." });
+              const noAccountEmbed = new EmbedBuilder()
+                .setColor('Red')
+                .setDescription('🚫 Kamu belum memiliki akun! Gunakan `/adventure start` untuk membuat akun.');
+              return interaction.editReply({ embeds: [noAccountEmbed], components: [] });
             }
 
             const items = [
-              { name: "🛡️ Shield", price: 10, description: "Perisai yang kokoh untuk melindungi diri memberikan defense +10." },
-              { name: "⚔️ Sword", price: 15, description: "Pedang yang kuat untuk bertarung melawan monster memberikan strength +10." },
-              { name: "🥋 Armor", price: 30, description: "Armor yang kokoh untuk melindungi diri memberikan defense +15." },
-              { name: "🍶 Revival", price: 35, description: "Menghidupkan kembali tanpa harus mati HP +100." },
+              { name: "🛡️ Shield", price: 10, description: "Perisai kokoh memberikan defense +10." },
+              { name: "⚔️ Sword", price: 15, description: "Pedang kuat memberikan strength +10." },
+              { name: "🥋 Armor", price: 30, description: "Armor tebal memberikan defense +15." },
+              { name: "🍶 Revival", price: 35, description: "Item kebangkitan otomatis HP +100." },
             ];
 
             const embed = new EmbedBuilder()
               .setColor("Blue")
-              .setTitle("> Toko")
-              .setDescription("Selamat datang di toko adventure! Pilih item yang ingin kamu beli:")
-              .setTimestamp()
-              .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+              .setThumbnail(interaction.client.user.displayAvatarURL({ dynamic: true }))
+              // .setTitle(`🛒 Shop Adventure`)
+              .setDescription(`## 🛒 Shop Adventure\nSelamat datang di toko adventure!\nPilih item yang ingin kamu beli dari menu di bawah ini.`)
+              .setFooter({ text: `🪙 Gold kamu: ${user.gold}`, iconURL: interaction.client.user.displayAvatarURL() })
+              .setTimestamp();
 
             items.forEach((item) => {
-              embed.addFields({ name: `${item.name}`, value: `Harga: **${item.price}** gold\n${item.description}`, inline: true });
+              embed.addFields({ name: `> ${item.name} - ${item.price} 🪙`, value: `${item.description}`, inline: false });
             });
 
             const row = new ActionRowBuilder().addComponents(
@@ -318,24 +557,27 @@ module.exports = {
                 if (!selectedItem) return;
 
                 if (user.gold < selectedItem.price) {
-                  await interaction.editReply({
-                    content: "kamu tidak memiliki gold yang cukup untuk membeli item ini.",
-                    embeds: [], // hapus embed
-                    components: [],
-                  });
+                  const noGoldEmbed = new EmbedBuilder()
+                    .setColor('Red')
+                    // .setTitle('💸 Gold Tidak Cukup!')
+                    .setDescription(`## 🪙 Gold Tidak Cukup!\nKamu membutuhkan **${selectedItem.price} gold** untuk membeli ${selectedItem.name}, tapi kamu hanya punya **${user.gold} gold**.`)
+                    .setFooter({ text: 'Coba cari gold lagi di adventure!' });
+                  await interaction.editReply({ embeds: [noGoldEmbed], components: [] });
                   return;
                 }
 
+                const confirmEmbed = new EmbedBuilder()
+                  .setColor('Yellow')
+                  // .setTitle('🛒 Konfirmasi Pembelian')
+                  .setDescription(`## 🛒 Konfirmasi Pembelian\nKamu akan membeli **${selectedItem.name}** seharga **${selectedItem.price} gold**.\n\nLanjutkan pembelian?`)
+                  .setFooter({ text: `🪙 Gold kamu: ${user.gold}` });
+
                 const confirmRow = new ActionRowBuilder().addComponents(
-                  new ButtonBuilder().setCustomId("confirm_purchase_adventure").setLabel("Konfirmasi Pembelian").setStyle(ButtonStyle.Success),
-                  new ButtonBuilder().setCustomId("cancel_purchase_adventure").setLabel("Batal").setStyle(ButtonStyle.Danger)
+                  new ButtonBuilder().setCustomId("confirm_purchase_adventure").setLabel("✅ Konfirmasi").setStyle(ButtonStyle.Success),
+                  new ButtonBuilder().setCustomId("cancel_purchase_adventure").setLabel("❌ Batal").setStyle(ButtonStyle.Danger)
                 );
 
-                await interaction.editReply({
-                  content: `kamu akan membeli **${selectedItem.name}** seharga **${selectedItem.price} gold**. Konfirmasi pembelian?`,
-                  embeds: [], // hapus embed
-                  components: [confirmRow],
-                });
+                await interaction.editReply({ embeds: [confirmEmbed], components: [confirmRow] });
 
                 const confirmationFilter = (btn) => btn.user.id === interaction.user.id;
                 const confirmationCollector = interaction.channel.createMessageComponentCollector({ filter: confirmationFilter, time: 15000, max: 1 });
@@ -344,7 +586,6 @@ module.exports = {
                   await btn.deferUpdate();
                   if (btn.customId === "confirm_purchase_adventure") {
                     user.gold -= selectedItem.price;
-                    // await user.save();
                     await user.saveAndUpdateCache();
 
                     await Inventory.create({
@@ -353,40 +594,46 @@ module.exports = {
                       itemName: selectedItem.name,
                     });
                     await Inventory.clearCache({ userId: user.userId });
-                    await interaction.editReply({
-                      content: `kamu berhasil membeli **${selectedItem.name}**!`,
-                      embeds: [], // hapus embed
-                      components: [],
-                    });
+
+                    const successEmbed = new EmbedBuilder()
+                      .setColor('Green')
+                      // .setTitle('✅ Pembelian Berhasil!')
+                      .setDescription(`## ✅ Pembelian Berhasil!\nKamu berhasil membeli **${selectedItem.name}** seharga **${selectedItem.price} gold**.`)
+                      .setFooter({ text: `🪙 Gold sekarang: ${user.gold}` });
+
+                    await interaction.editReply({ embeds: [successEmbed], components: [] });
                   } else if (btn.customId === "cancel_purchase_adventure") {
-                    await interaction.editReply({
-                      content: "Pembelian dibatalkan.",
-                      embeds: [], // hapus embed
-                      components: [],
-                    });
+                    const cancelEmbed = new EmbedBuilder()
+                      .setColor('Grey')
+                      // .setTitle('❌ Pembelian Dibatalkan')
+                      .setDescription(`## ❌ Pembelian Dibatalkan\nKamu membatalkan pembelian ${selectedItem.name}.`);
+                    await interaction.editReply({ embeds: [cancelEmbed], components: [] });
                   }
                 });
 
                 confirmationCollector.on("end", () => {
-                  interaction.editReply({
-                    components: [],
-                  });
+                  interaction.editReply({ components: [] }).catch(() => { });
                 });
               }
             });
 
             collector.on("end", () => {
-              interaction.editReply({
-                content: "Waktu habis. Silakan gunakan kembali perintah `/adventure shop` untuk mengakses toko.",
-                embeds: [], // hapus embed
-                components: [],
-              });
+              const timeoutEmbed = new EmbedBuilder()
+                .setColor('Red')
+                // .setTitle('⏱️ Waktu Habis')
+                .setDescription(`## ⏱️ Waktu Habis\nKamu terlalu lama memilih item. Gunakan kembali perintah \`/adventure shop\` untuk membuka toko.`);
+              interaction.editReply({ embeds: [timeoutEmbed], components: [] }).catch(() => { });
             });
           } catch (error) {
             console.error("Error during shop command execution:", error);
-            return interaction.editReply({ content: "❌ Terjadi kesalahan saat menjalankan perintah ini. Silakan coba lagi." });
+            const errorEmbed = new EmbedBuilder()
+              .setColor('Red')
+              // .setTitle('❌ Terjadi Kesalahan')
+              .setDescription(`## ❌ Terjadi Kesalahan\nTerjadi kesalahan saat menjalankan perintah. Silakan coba lagi nanti.`);
+            return interaction.editReply({ embeds: [errorEmbed], components: [] });
           }
         }
+
       }
 
       // ====== PRIVATE FUNCTION =========

@@ -94,9 +94,9 @@ module.exports = {
           const rawRules = interaction.options.getString("rules") || null;
           const rules = rawRules
             ? rawRules
-                .split(",")
-                .map((rule, index) => `${index + 1}. ${rule.trim()}`)
-                .join("\n")
+              .split(",")
+              .map((rule, index) => `${index + 1}. ${rule.trim()}`)
+              .join("\n")
             : null;
 
           // Cek apakah clan dengan nama ini sudah ada
@@ -456,7 +456,7 @@ module.exports = {
               // Kirim DM ke owner clan
               try {
                 const ownerUser = await interaction.client.users.fetch(clan.ownerId);
-                await ownerUser.send({ embeds: [leaveEmbed] }).catch(() => {});
+                await ownerUser.send({ embeds: [leaveEmbed] }).catch(() => { });
               } catch (e) {
                 // Ignore DM error
               }
@@ -532,7 +532,7 @@ module.exports = {
               await message.react(clan.emoji);
             } catch (e) {
               // Jika gagal react, hapus semua reaksi dan batalkan event
-              await message.reactions.removeAll().catch(() => {});
+              await message.reactions.removeAll().catch(() => { });
               return interaction.editReply(`❌ Gagal menambahkan reaksi emoji "${clan.emoji}" pada clan "${clan.name}". Pastikan emoji valid dan bot memiliki akses.`);
             }
           }
@@ -623,7 +623,7 @@ module.exports = {
                     .setTimestamp()
                     .setFooter({ text: "Clan War", iconURL: interaction.client.user.displayAvatarURL() });
                   const userObj = await interaction.client.users.fetch(member.id);
-                  await userObj.send({ embeds: [dmEmbed] }).catch(() => {});
+                  await userObj.send({ embeds: [dmEmbed] }).catch(() => { });
                 } catch (dmErr) {
                   // ignore DM error
                 }
@@ -652,10 +652,9 @@ module.exports = {
                   `Warna: \`${clan.color}\`\n` +
                   `Owner: <@${clan.ownerId}>\n` +
                   `Role: <@&${clan.roleId}>\n` +
-                  `Anggota: ${
-                    JSON.parse(clan.memberId || "[]")
-                      .map((id) => `<@${id}>`)
-                      .join(", ") || "Belum ada"
+                  `Anggota: ${JSON.parse(clan.memberId || "[]")
+                    .map((id) => `<@${id}>`)
+                    .join(", ") || "Belum ada"
                   }`,
                 inline: false,
               }))

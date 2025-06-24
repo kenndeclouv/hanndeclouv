@@ -986,7 +986,7 @@ module.exports = {
           }
 
           const settings = botSetting.dataValues;
-          let description = `> **🛠️ pengaturan bot saat ini:**\n\n`;
+          let description = `## **🛠️ pengaturan bot saat ini:**\n\n`;
 
           const kategori = {
             umum: [],
@@ -995,59 +995,83 @@ module.exports = {
             lainnya: [],
           };
 
+          // fungsi buat convert camelCase ke Camel Case
+          function formatKey(key) {
+            return key
+              .replace(/([a-z])([A-Z])/g, "$1 $2") // tambahin spasi sebelum huruf besar
+              .replace(/^./, (str) => str.toUpperCase()) // kapital huruf pertama
+              .replace(/\s([a-z])/g, (match, p1) => ` ${p1.toUpperCase()}`); // kapital setiap awal kata
+          }
+
           for (const [key, value] of Object.entries(settings)) {
             if (["id", "guildId"].includes(key)) continue;
 
-            const formattedKey = `\`${key}\``;
+            const formattedKey = `\`${formatKey(key)}\``;
+            // const formattedKey = formatKey(key);
 
             if (typeof value === "boolean") {
-              kategori.boolean.push(`• ${formattedKey}: ${value ? "✅ aktif" : "❌ nonaktif"}`);
+              // kategori.boolean.push(`🟩 ・${formattedKey} ➜ ${value ? "✅ aktif" : "❌ nonaktif"}`);
+              kategori.boolean.push(`${value ? "🟩 ・" + formattedKey : "🟥 ・" + formattedKey}`);
             } else if (Array.isArray(value)) {
               if (value.length === 0) {
-                kategori.array.push(`• ${formattedKey}: 🚫 tidak ada data`);
+                kategori.array.push(`🟪 ・${formattedKey} ➜ 🚫 tidak ada data`);
               } else {
                 let list = "";
                 value.forEach((item, i) => {
-                  if (typeof item === "object" && item.level && item.roleId) {
-                    list += `   └ 🥇 level ${item.level} → <@&${item.roleId}>\n`;
+                  // if (typeof item === "object" && item.level && item.roleId) {
+                  //   list += `   └ 🥇 level ${item.level} ➜ <@&${item.roleId}>\n`;
+                  // } else {
+                  //   list += `   └ 🔹 ${item}\n`;
+                  // }
+                  if (typeof item === "object") {
+                    if (item.level && (item.roleId || item.role)) {
+                      const roleDisplay = item.roleId ? `<@&${item.roleId}>` : `<@&${item.role}>`;
+                      list += `   └ 🥇 level ${item.level} ➜ ${roleDisplay}\n`;
+                    } else {
+                      list += `   └ 🔹 ${JSON.stringify(item)}\n`;
+                    }
                   } else {
                     list += `   └ 🔹 ${item}\n`;
                   }
                 });
-                kategori.array.push(`• ${formattedKey}:\n${list}`);
+                kategori.array.push(`🟪 ・${formattedKey}:\n${list}`);
               }
             } else if (typeof value === "string" || typeof value === "number") {
-              // Cek jika key mengandung "ChannelId" dan value ada (tidak null/undefined/empty)
               if (key.toLowerCase().includes("channelid") || key.toLowerCase().includes("forumid") || (key.toLowerCase().includes("categoryid") && value)) {
-                kategori.umum.push(`• ${formattedKey}: <#${value}>`);
+                kategori.umum.push(`🟨 ・${formattedKey} ➜ <#${value}>`);
               } else if (key.toLowerCase().includes("roleid")) {
-                kategori.umum.push(`• ${formattedKey}: <@&${value}>`);
+                kategori.umum.push(`🟨 ・${formattedKey} ➜ <@&${value}>`);
               } else {
-                kategori.umum.push(`• ${formattedKey}: ${value}`);
+                kategori.umum.push(`🟨 ・${formattedKey} ➜ ${value}`);
               }
             } else {
-              kategori.lainnya.push(`• ${formattedKey}: ⚠️ tidak dikenali`);
+              // kategori.lainnya.push(`⬛ ・${formattedKey} ➜ ⚠️ tidak dikenali`);
+              kategori.lainnya.push(`⬛ ・${formattedKey}`);
             }
           }
 
           if (kategori.boolean.length) {
-            description += `__**🧷 fitur aktif/nonaktif**__\n${kategori.boolean.join("\n")}\n\n`;
+            description += `### **⭕ fitur aktif / nonaktif**\n${kategori.boolean.join("\n")}\n\n────────────────────\n\n`;
           }
 
           if (kategori.umum.length) {
-            description += `__**⚙️ pengaturan umum**__\n${kategori.umum.join("\n")}\n\n`;
+            description += `### **⚙️ pengaturan umum**\n${kategori.umum.join("\n")}\n\n────────────────────\n\n`;
           }
 
           if (kategori.array.length) {
-            description += `__**📦 data terstruktur**__\n${kategori.array.join("\n")}\n\n`;
+            description += `### **🗃️ data terstruktur**\n${kategori.array.join("\n")}\n\n────────────────────\n\n`;
           }
 
           if (kategori.lainnya.length) {
-            description += `__**❓ lainnya**__\n${kategori.lainnya.join("\n")}\n\n`;
+            description += `### **❓ lainnya**\n${kategori.lainnya.join("\n")}\n\n────────────────────\n\n`;
           }
 
-          embed.setTitle("📋 pengaturan bot").setColor("Blue").setDescription(description).setTimestamp().setFooter({
-            text: "Pengaturan bot di server ini",
+          // embed.setTitle("> <:kennmchead:1375315784456343572> Bot Setting").setColor("Blue").setDescription(description).setTimestamp().setFooter({
+          //   text: "pengaturan bot di server ini",
+          //   iconURL: interaction.client.user.displayAvatarURL(),
+          // });
+          embed.setTitle(" ").setColor("Blue").setDescription(description).setTimestamp().setFooter({
+            text: " ",
             iconURL: interaction.client.user.displayAvatarURL(),
           });
 

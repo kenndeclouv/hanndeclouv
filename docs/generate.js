@@ -1,3 +1,151 @@
+// const fs = require("fs");
+// const path = require("path");
+
+// const commandsDir = path.join(__dirname, "../commands");
+// const docsDir = path.join(__dirname, "./");
+
+// const getAllCommandFiles = (dir, base = "") => {
+//   let results = [];
+//   const list = fs.readdirSync(dir);
+//   list.forEach((file) => {
+//     const fullPath = path.join(dir, file);
+//     const relativePath = path.join(base, file);
+//     const stat = fs.statSync(fullPath);
+//     if (stat.isDirectory()) {
+//       results = results.concat(getAllCommandFiles(fullPath, relativePath));
+//     } else if (file.endsWith(".js")) {
+//       results.push({ fullPath, relativePath });
+//     }
+//   });
+//   return results;
+// };
+
+// const buildFullPath = (options = [], prefix = []) => {
+//   const paths = [];
+
+//   for (const opt of options) {
+//     const currentPath = [...prefix, opt.name];
+
+//     if (opt.options) {
+//       const nestedPaths = buildFullPath(opt.options, currentPath);
+//       paths.push(...nestedPaths);
+//     } else {
+//       paths.push({
+//         path: currentPath,
+//         option: opt
+//       });
+//     }
+//   }
+
+//   return paths;
+// };
+
+// const buildCommandUsage = (commandName, pathParts, options = []) => {
+//   let usage = `/${commandName}`;
+
+//   // Tambahkan group/subcommand path
+//   for (const part of pathParts) {
+//     usage += ` ${part}`;
+//   }
+
+//   // Tambahkan options
+//   for (const opt of options) {
+//     usage += ` [${opt.name}]`;
+//   }
+
+//   return usage;
+// };
+
+// const buildMarkdown = (commandJson) => {
+//   let md = `### /${commandJson.name}\n\n`;
+//   md += `**Deskripsi:** ${commandJson.description || "-"}\n\n`;
+
+//   const allPaths = buildFullPath(commandJson.options || []);
+//   const usageMap = new Map();
+
+//   // Kelompokkan berdasarkan path unik
+//   const pathGroups = new Map();
+//   for (const { path, option } of allPaths) {
+//     const key = path.join(':');
+
+//     if (!pathGroups.has(key)) {
+//       pathGroups.set(key, {
+//         path,
+//         options: []
+//       });
+//     }
+
+//     pathGroups.get(key).options.push(option);
+//   }
+
+//   // Bangun usage untuk setiap path unik
+//   md += `### Usage:\n`;
+//   pathGroups.forEach((group) => {
+//     const usage = buildCommandUsage(commandJson.name, group.path, group.options);
+//     usageMap.set(usage, group.options);
+//     md += `\`${usage}\`\n`;
+//   });
+
+//   // Bangun opsi untuk setiap path unik
+//   if (allPaths.length > 0) {
+//     md += `\n### Options:\n`;
+
+//     pathGroups.forEach((group, key) => {
+//       const scope = group.path.length > 0
+//         ? ` (${group.path.join(' > ')})`
+//         : '';
+
+//       md += `#### Untuk perintah${scope}:\n`;
+
+//       group.options.forEach((opt) => {
+//         md += `- \`${opt.name}\`${opt.required ? " (required)" : ""} — ${opt.description || "-"}\n`;
+
+//         if (opt.choices?.length > 0) {
+//           md += `  - Pilihan: ${opt.choices.map(c => `\`${c.value}\``).join(", ")}\n`;
+//         }
+
+//         // Bangun contoh penggunaan yang akurat
+//         const exampleValue = opt.choices?.[0]?.value || '[value]';
+//         const exampleUsage = buildCommandUsage(
+//           commandJson.name,
+//           group.path,
+//           [{ ...opt, name: `${opt.name}:${exampleValue}` }]
+//         );
+
+//         md += `  - **Contoh Penggunaan:** \`${exampleUsage}\`\n`;
+//       });
+//     });
+//   }
+
+//   md += `\n---\n\n`;
+//   return md;
+// };
+
+// const allFiles = getAllCommandFiles(commandsDir);
+// const docsMap = {};
+
+// for (const { fullPath, relativePath } of allFiles) {
+//   const command = require(fullPath);
+//   if (!command.data?.toJSON) continue;
+
+//   const json = command.data.toJSON();
+//   const parts = relativePath.split(path.sep);
+//   const folder = parts.length > 1 ? parts[0] : "root";
+
+//   if (!docsMap[folder]) docsMap[folder] = [];
+//   docsMap[folder].push(buildMarkdown(json));
+// }
+
+// fs.mkdirSync(docsDir, { recursive: true });
+
+// Object.entries(docsMap).forEach(([folder, entries]) => {
+//   const filePath = path.join(docsDir, `${folder}.md`);
+//   const header = `## 📁 Command: ${folder}\n\n`;
+//   const fullContent = header + entries.join("\n");
+//   fs.writeFileSync(filePath, fullContent);
+//   console.log(`✅ ${filePath} dibuat!`);
+// });
+
 const fs = require("fs");
 const path = require("path");
 
@@ -12,7 +160,7 @@ const getAllCommandFiles = (dir, base = "") => {
     const relativePath = path.join(base, file);
     const stat = fs.statSync(fullPath);
     if (stat.isDirectory()) {
-      results = results.concat(getAllCommandFiles(fullPath, path.join(base, file)));
+      results = results.concat(getAllCommandFiles(fullPath, relativePath));
     } else if (file.endsWith(".js")) {
       results.push({ fullPath, relativePath });
     }
@@ -20,72 +168,93 @@ const getAllCommandFiles = (dir, base = "") => {
   return results;
 };
 
-const extractOptions = (options = [], prefix = []) => {
-  const result = [];
+const buildCommandPath = (options = [], prefix = []) => {
+  const paths = [];
 
   for (const opt of options) {
-    if (opt.type === 1 || opt.type === 2) {
-      // subcommand atau subcommand group
-      const subPrefix = [...prefix, opt.name];
-      const nested = extractOptions(opt.options || [], subPrefix);
-      result.push({
-        type: opt.type,
-        name: opt.name,
-        description: opt.description,
-        options: nested.map((n) => n.options).flat(),
-        fullPath: subPrefix,
-      });
+    const currentPath = [...prefix, opt.name];
+    
+    if (opt.options) {
+      const nestedPaths = buildCommandPath(opt.options, currentPath);
+      paths.push(...nestedPaths);
     } else {
-      result.push({
-        type: opt.type,
-        name: opt.name,
-        description: opt.description,
-        required: opt.required,
-        choices: opt.choices || [],
-        options: [{ ...opt }],
-        fullPath: prefix,
+      paths.push({
+        path: currentPath,
+        option: opt
       });
     }
   }
 
-  return result;
+  return paths;
+};
+
+const buildCommandUsage = (commandName, pathParts, options = []) => {
+  let usage = `/${commandName}`;
+  
+  // Add group/subcommand path
+  for (const part of pathParts) {
+    usage += ` ${part}`;
+  }
+  
+  // Add options
+  for (const opt of options) {
+    usage += ` [${opt.name}]`;
+  }
+  
+  return usage;
 };
 
 const buildMarkdown = (commandJson) => {
-  let md = `## /${commandJson.name}\n\n`;
+  let md = `### /${commandJson.name}\n\n`;
   md += `**Deskripsi:** ${commandJson.description || "-"}\n\n`;
 
-  const allParsed = extractOptions(commandJson.options || []);
+  const allPaths = buildCommandPath(commandJson.options || []);
+  const pathGroups = new Map();
 
-  const uniqueUsages = new Map();
-
-  md += `### Usage:\n`;
-  if (allParsed.length === 0) {
-    md += `\`/${commandJson.name}\`\n`;
-  } else {
-    allParsed.forEach((item) => {
-      const usage = `/${commandJson.name}${item.fullPath.map((p) => ` ${p}`).join("")}${item.options.map((o) => ` [${o.name}]`).join("")}`;
-      uniqueUsages.set(usage, true);
-    });
-    [...uniqueUsages.keys()].forEach((u) => {
-      md += `\`${u}\`\n`;
-    });
+  // Group by unique path
+  for (const { path, option } of allPaths) {
+    const key = path.join(':');
+    if (!pathGroups.has(key)) {
+      pathGroups.set(key, {
+        path,
+        options: []
+      });
+    }
+    pathGroups.get(key).options.push(option);
   }
 
-  if (allParsed.length > 0) {
+  // Build usage section
+  md += `### Usage:\n`;
+  pathGroups.forEach((group) => {
+    const usage = buildCommandUsage(commandJson.name, group.path, group.options);
+    md += `\`${usage}\`\n`;
+  });
+
+  // Build options section if any
+  if (allPaths.length > 0) {
     md += `\n### Options:\n`;
-    allParsed.forEach((item) => {
-      item.options.forEach((opt) => {
+    
+    pathGroups.forEach((group) => {
+      const scope = group.path.length > 0 
+        ? ` (${group.path.join(' > ')})` 
+        : '';
+      
+      md += `### Untuk perintah${scope}:\n`;
+      
+      group.options.forEach((opt) => {
         md += `- \`${opt.name}\`${opt.required ? " (required)" : ""} — ${opt.description || "-"}\n`;
+        
         if (opt.choices?.length > 0) {
-          md += `  - Pilihan: ${opt.choices.map((c) => `\`${c.name}\``).join(", ")}\n`;
+          md += `  - Pilihan: ${opt.choices.map(c => `\`${c.value}\``).join(", ")}\n`;
         }
-        // Contoh penggunaan
-        if (opt.choices?.length > 0) {
-          md += `  - **Contoh Penggunaan:** \`/${commandJson.name} ${opt.name}:${opt.choices[0].name}\`\n`;
-        } else {
-          md += `  - **Contoh Penggunaan:** \`/${commandJson.name} ${opt.name}:[value]\`\n`;
-        }
+        
+        // Build accurate example
+        const exampleValue = opt.choices?.[0]?.value || '[value]';
+        const examplePath = group.path.length > 0 
+          ? `${commandJson.name} ${group.path.join(' ')}` 
+          : commandJson.name;
+        
+        md += `  - **Contoh Penggunaan:** \`/${examplePath} ${opt.name}:${exampleValue}\`\n`;
       });
     });
   }
@@ -98,129 +267,33 @@ const allFiles = getAllCommandFiles(commandsDir);
 const docsMap = {};
 
 for (const { fullPath, relativePath } of allFiles) {
+  delete require.cache[require.resolve(fullPath)];
   const command = require(fullPath);
-  if (!command.data?.toJSON) continue;
+  
+  if (!command.data?.toJSON) {
+    console.log(`⏩ Skipping ${relativePath} - not a valid command`);
+    continue;
+  }
 
-  const json = command.data.toJSON();
-  const parts = relativePath.split(path.sep);
-  const folder = parts.length > 1 ? parts[0] : "root";
+  try {
+    const json = command.data.toJSON();
+    const parts = relativePath.split(path.sep);
+    const folder = parts.length > 1 ? parts[0] : "root";
 
-  if (!docsMap[folder]) docsMap[folder] = [];
-  docsMap[folder].push(buildMarkdown(json));
+    if (!docsMap[folder]) docsMap[folder] = [];
+    docsMap[folder].push(buildMarkdown(json));
+    console.log(`✅ Processed ${relativePath}`);
+  } catch (error) {
+    console.error(`❌ Error processing ${relativePath}:`, error.message);
+  }
 }
 
 fs.mkdirSync(docsDir, { recursive: true });
 
 Object.entries(docsMap).forEach(([folder, entries]) => {
   const filePath = path.join(docsDir, `${folder}.md`);
-  const header = `# 📁 Command: ${folder}\n\n`;
+  const header = `## 📁 Command: ${folder}\n\n`;
   const fullContent = header + entries.join("\n");
   fs.writeFileSync(filePath, fullContent);
-  console.log(`✅ ${filePath} dibuat!`);
+  console.log(`📄 ${filePath} created!`);
 });
-// const fs = require("fs");
-// const path = require("path");
-
-// const commandsDir = path.join(__dirname, "commands");
-// const docsDir = path.join(__dirname, "docs");
-
-// const getAllCommandFiles = (dir, base = "") => {
-//   let results = [];
-//   const list = fs.readdirSync(dir);
-//   list.forEach((file) => {
-//     const fullPath = path.join(dir, file);
-//     const relativePath = path.join(base, file);
-//     const stat = fs.statSync(fullPath);
-//     if (stat.isDirectory()) {
-//       results = results.concat(getAllCommandFiles(fullPath, path.join(base, file)));
-//     } else if (file.endsWith(".js")) {
-//       results.push({ fullPath, relativePath });
-//     }
-//   });
-//   return results;
-// };
-
-// const buildMarkdown = (commandJson) => {
-//   let md = `## /${commandJson.name}\n\n`;
-//   md += `**Deskripsi:** ${commandJson.description || "-"}\n\n`;
-
-//   const subcommands = commandJson.options?.filter((opt) => opt.type === 1); // SUBCOMMAND
-
-//   if (subcommands?.length > 0) {
-//     md += `### Subcommands:\n`;
-//     subcommands.forEach((s) => {
-//       md += `- \`${s.name}\` - ${s.description}\n`;
-//     });
-//     md += `\n`;
-
-//     md += `### Usage:\n`;
-//     subcommands.forEach((s) => {
-//       let usage = `/${commandJson.name} ${s.name}`;
-//       if (s.options?.length > 0) {
-//         s.options.forEach((arg) => {
-//           usage += ` [${arg.name}]`;
-//         });
-//       }
-//       md += `\`${usage}\`\n`;
-//     });
-//   } else {
-//     // command biasa
-//     md += `### Usage:\n`;
-//     let usage = `/${commandJson.name}`;
-//     if (commandJson.options?.length > 0) {
-//       commandJson.options.forEach((opt) => {
-//         usage += ` [${opt.name}]`;
-//       });
-//     }
-//     md += `\`${usage}\`\n`;
-//   }
-
-//   // tampilkan detail options dengan contoh
-//   const allOptions = subcommands?.flatMap((s) => s.options || []) ?? commandJson.options ?? [];
-//   if (allOptions.length > 0) {
-//     md += `\n### Options:\n`;
-//     allOptions.forEach((opt) => {
-//       md += `- \`${opt.name}\`${opt.required ? " (required)" : ""} — ${opt.description || "-"}\n`;
-//       if (opt.choices?.length > 0) {
-//         md += `  - Pilihan: ${opt.choices.map((c) => `\`${c.name}\``).join(", ")}\n`;
-//       }
-//       // Contoh penggunaan
-//       if (opt.choices?.length > 0) {
-//         md += `  - **Contoh Penggunaan:** \`/${commandJson.name} ${opt.name} ${opt.choices[0].name}\`\n`;
-//       } else {
-//         md += `  - **Contoh Penggunaan:** \`/${commandJson.name} ${opt.name} [value]\`\n`;
-//       }
-//     });
-//   }
-
-//   md += `\n---\n\n`;
-//   return md;
-// };
-
-// const allFiles = getAllCommandFiles(commandsDir);
-
-// const docsMap = {}; // key = subfolder, value = list of markdowns
-
-// for (const { fullPath, relativePath } of allFiles) {
-//   const command = require(fullPath);
-//   if (!command.data?.toJSON) continue;
-
-//   const json = command.data.toJSON();
-//   const parts = relativePath.split(path.sep); // split by subfolder
-
-//   const folder = parts.length > 1 ? parts[0] : "root";
-
-//   if (!docsMap[folder]) docsMap[folder] = [];
-//   docsMap[folder].push(buildMarkdown(json));
-// }
-
-// // buat per file .md sesuai folder
-// fs.mkdirSync(docsDir, { recursive: true });
-
-// Object.entries(docsMap).forEach(([folder, entries]) => {
-//   const filePath = path.join(docsDir, `${folder}.md`);
-//   const header = `# 📁 Command: ${folder}\n\n`;
-//   const fullContent = header + entries.join("\n");
-//   fs.writeFileSync(filePath, fullContent);
-//   console.log(`✅ ${filePath} dibuat!`);
-// });
