@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const User = require("../../database/models/User");
+const { embedFooter } = require("../../helpers");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -68,44 +69,47 @@ module.exports = {
       const bankType = interaction.options.getString("bank");
       const userId = interaction.user.id;
 
-      if (subcommand === "create") {
-        // Check if user already has an account
-        const existingUser = await User.findOne({ where: { userId } });
-        if (existingUser) {
-          return interaction.editReply({ content: "kamu sudah memiliki akun." });
+      switch (subcommand) {
+        case "create": {
+          // Check if user already has an account
+          const existingUser = await User.getCache({ userId: userId, guildId: interaction.guild.id });
+          if (existingUser) {
+            return interaction.editReply({ content: "kamu sudah memiliki akun." });
+          }
+
+          // Create new user account
+          await User.create({ userId, guildId: interaction.guild.id, bankType, cash: 0, bank: 0 });
+
+          const embed = new EmbedBuilder()
+            .setColor("Green")
+            .setDescription("## 💳 Akun Berhasil Dibuat")
+            .setDescription(`Akun berhasil dibuat dengan jenis bank: **${bankType.toUpperCase()}**`)
+            .setThumbnail(interaction.user.displayAvatarURL())
+            .setTimestamp()
+            .setFooter(embedFooter(interaction));
+          return interaction.editReply({ embeds: [embed] });
         }
+        case "edit": {
+          // Check if user has an account
+          const existingUser = await User.getCache({ userId: userId, guildId: interaction.guild.id });
+          if (!existingUser) {
+            return interaction.editReply({ content: "kamu belum memiliki akun gunakan `/account create` untuk membuat akun." });
+          }
 
-        // Create new user account
-        await User.create({ userId, bankType, cash: 0, bank: 0 });
+          // Update user's bank type
+          existingUser.bankType = bankType;
+          existingUser.changed("bankType", true);
+          await existingUser.saveAndUpdateCache("userId");
 
-        const embed = new EmbedBuilder()
-          .setColor("Green")
-          .setTitle("Akun Berhasil Dibuat")
-          .setDescription(`Akun berhasil dibuat dengan jenis bank: **${bankType.toUpperCase()}**`)
-          .setThumbnail(interaction.user.displayAvatarURL())
-          .setTimestamp()
-          .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
-        return interaction.editReply({ embeds: [embed] });
-      }
-
-      if (subcommand === "edit") {
-        // Check if user has an account
-        const existingUser = await User.findOne({ where: { userId } });
-        if (!existingUser) {
-          return interaction.editReply({ content: "kamu belum memiliki akun gunakan `/account create` untuk membuat akun." });
+          const embed = new EmbedBuilder()
+            .setColor("Blue")
+            .setDescription("## 💳 Akun Berhasil Diedit")
+            .setDescription(`Jenis bank berhasil diubah menjadi: **${bankType.toUpperCase()}**`)
+            .setThumbnail(interaction.user.displayAvatarURL())
+            .setTimestamp()
+            .setFooter(embedFooter(interaction));
+          return interaction.editReply({ embeds: [embed] });
         }
-
-        // Update user's bank type
-        await User.update({ bankType }, { where: { userId } });
-
-        const embed = new EmbedBuilder()
-          .setColor("Blue")
-          .setTitle("Akun Berhasil Diedit")
-          .setDescription(`Jenis bank berhasil diubah menjadi: **${bankType.toUpperCase()}**`)
-          .setThumbnail(interaction.user.displayAvatarURL())
-          .setTimestamp()
-          .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
-        return interaction.editReply({ embeds: [embed] });
       }
     } catch (error) {
       console.error("Error during account command execution:", error);

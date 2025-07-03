@@ -64,7 +64,7 @@ module.exports = {
           const index = i * 3 + j;
           row.addComponents(
             new ButtonBuilder()
-              .setCustomId(index.toString())
+              .setCustomId(`tictactoe-${index}`)
               .setLabel(board[index])
               // .setStyle(ButtonStyle.Secondary)
               .setStyle(board[index] === '❌' ? ButtonStyle.Danger : board[index] === '⭕' ? ButtonStyle.Primary : ButtonStyle.Secondary)
@@ -79,7 +79,7 @@ module.exports = {
     const rematchRow = () => {
       return new ActionRowBuilder().addComponents(
         new ButtonBuilder()
-          .setCustomId('rematch')
+          .setCustomId('tictactoe-rematch')
           .setLabel('Rematch 🔁')
           .setStyle(ButtonStyle.Success)
       );
@@ -96,48 +96,64 @@ module.exports = {
 
       message = await message?.edit({ embeds: [embed], components: createButtons(), fetchReply: true }) || await interaction.reply({ embeds: [embed], components: createButtons(), fetchReply: true });
 
-      const collector = message.createMessageComponentCollector({ time: 120000 });
+      // const collector = message.createMessageComponentCollector({ time: 120000 });
+
+      // Dalam command tictactoe (di collector)
+      const collector = message.createMessageComponentCollector({
+        time: 120000,
+        filter: i => {
+          // Hentikan pemrosesan jika tombol sudah ditangani
+          if (i.replied || i.deferred) return false;
+          return true;
+        }
+      });
 
       collector.on('collect', async i => {
-        if (i.customId === 'rematch') return;
+        try {
 
-        if (i.user.id !== currentPlayer.id) {
-          return i.reply({ content: 'giliran siapa hayoo😭 tunggu yaa!', ephemeral: true });
-        }
+          if (i.customId === 'tictactoe-rematch') return;
 
-        const index = parseInt(i.customId);
-        board[index] = currentPlayer.id === playerX.id ? '❌' : '⭕';
+          if (i.user.id !== currentPlayer.id) {
+            return i.reply({ content: 'giliran siapa hayoo😭 tunggu yaa!', ephemeral: true });
+          }
 
-        if (checkWin('❌')) {
-          collector.stop();
-          embed.setDescription(getBoard());
-          embed.data.fields = [];
-          // embed.addFields({ name: 'Status', value: `🎉 ${currentPlayer} menang!` });
-          embed.addFields({ name: '🏆 | Status', value: `🎉 ${currentPlayer} menangg!` });
-          return i.update({ embeds: [embed], components: [rematchRow()] });
-        }
+          const index = parseInt(i.customId);
+          board[index] = currentPlayer.id === playerX.id ? '❌' : '⭕';
 
-        if (checkDraw()) {
-          collector.stop();
-          embed.setDescription(getBoard());
-          embed.data.fields = [];
-          // embed.addFields({ name: 'Status', value: 'seri yaa 😋' });
-          embed.addFields({ name: '🤝 | Status', value: 'seri yaa 😋' });
-          return i.update({ embeds: [embed], components: [rematchRow()] });
-        }
+          if (checkWin('❌')) {
+            collector.stop();
+            embed.setDescription(getBoard());
+            embed.data.fields = [];
+            // embed.addFields({ name: 'Status', value: `🎉 ${currentPlayer} menang!` });
+            embed.addFields({ name: '🏆 | Status', value: `🎉 ${currentPlayer} menangg!` });
+            return i.update({ embeds: [embed], components: [rematchRow()] });
+          }
 
-        if (botMode) {
-          currentPlayer = playerO;
-          embed.setDescription(getBoard());
-          embed.data.fields = [{ name: 'Giliran', value: `${currentPlayer} 🔄` }];
-          await i.update({ embeds: [embed], components: createButtons() });
+          if (checkDraw()) {
+            collector.stop();
+            embed.setDescription(getBoard());
+            embed.data.fields = [];
+            // embed.addFields({ name: 'Status', value: 'seri yaa 😋' });
+            embed.addFields({ name: '🤝 | Status', value: 'seri yaa 😋' });
+            return i.update({ embeds: [embed], components: [rematchRow()] });
+          }
 
-          setTimeout(() => botMove(collector, embed), 1000);
-        } else {
-          currentPlayer = currentPlayer.id === playerX.id ? playerO : playerX;
-          embed.setDescription(getBoard());
-          embed.data.fields = [{ name: 'Giliran', value: `${currentPlayer} 🔄` }];
-          await i.update({ embeds: [embed], components: createButtons() });
+          if (botMode) {
+            currentPlayer = playerO;
+            embed.setDescription(getBoard());
+            embed.data.fields = [{ name: 'Giliran', value: `${currentPlayer} 🔄` }];
+            await i.update({ embeds: [embed], components: createButtons() });
+
+            setTimeout(() => botMove(collector, embed), 1000);
+          } else {
+            currentPlayer = currentPlayer.id === playerX.id ? playerO : playerX;
+            embed.setDescription(getBoard());
+            embed.data.fields = [{ name: 'Giliran', value: `${currentPlayer} 🔄` }];
+            await i.update({ embeds: [embed], components: createButtons() });
+          }
+        } catch (error) {
+          console.error('Error processing move:', error);
+          await i.reply({ content: 'Terjadi error saat memproses langkah!', ephemeral: true });
         }
       });
 
@@ -153,7 +169,7 @@ module.exports = {
       const rematchCollector = message.createMessageComponentCollector({ time: 600000 });
 
       rematchCollector.on('collect', async i => {
-        if (i.customId !== 'rematch') return;
+        if (i.customId !== 'tictactoe-rematch') return;
 
         if (i.user.id !== playerX.id && i.user.id !== playerO.id) {
           return i.reply({ content: 'cuma player yang bisa rematch yaa 😋', ephemeral: true });

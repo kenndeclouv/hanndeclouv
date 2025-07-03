@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder, WebhookClient } = require("discord.js");
 const User = require("../../database/models/User");
 const BotSetting = require("../../database/models/BotSetting");
-// const { checkPermission } = require("../../helpers");
+const { embedFooter } = require("../../helpers");
 require("dotenv").config();
 
 module.exports = {
@@ -43,7 +43,7 @@ module.exports = {
         });
       }
 
-      const userRecord = await User.getCache({ userId: targetUser.id });
+      const userRecord = await User.getCache({ userId: targetUser.id, guildId: interaction.guild.id });
       if (!userRecord) {
         return interaction.editReply({
           content: "Pengguna tidak ditemukan di database!",
@@ -57,7 +57,7 @@ module.exports = {
 
       try {
         userRecord.changed("warnings", true);
-        await userRecord.save(); // Pastikan kita simpan dengan benar
+        await userRecord.saveAndUpdateCache("userId"); // Pastikan kita simpan dengan benar
       } catch (err) {
         console.error("Error while saving user record:", err);
         return interaction.editReply({
@@ -105,10 +105,7 @@ module.exports = {
             .setTitle("> ⚠️ Peringatan Diberikan")
             .setDescription(`<@${targetUser.id}> telah menerima peringatan dari <@${interaction.user.id}> karena: **${reason}**`)
             .setTimestamp()
-            .setFooter({
-              text: "Sistem",
-              iconURL: interaction.client.user.displayAvatarURL(),
-            });
+            .setFooter(embedFooter(interaction));
 
           await modLogChannel.send({ embeds: [channelEmbed] });
 
@@ -119,10 +116,7 @@ module.exports = {
               .setTitle("> ⏳ Timeout Otomatis")
               .setDescription(`<@${targetUser.id}> telah di-timeout selama 1 hari karena mencapai 3 peringatan.`)
               .setTimestamp()
-              .setFooter({
-                text: "Sistem",
-                iconURL: interaction.client.user.displayAvatarURL(),
-              });
+              .setFooter(embedFooter(interaction));
             await modLogChannel.send({ embeds: [timeoutEmbed] });
           }
         } catch (err) {
@@ -136,23 +130,17 @@ module.exports = {
         .setDescription(`<@${targetUser.id}> telah diberi peringatan karena: ${reason}` + (timeoutApplied ? "\n\n⏳ User telah di-timeout selama 1 hari karena mencapai 3 peringatan." : ""))
         .setThumbnail(interaction.client.user.displayAvatarURL())
         .setTimestamp()
-        .setFooter({
-          text: `Sistem`,
-          iconURL: interaction.client.user.displayAvatarURL(),
-        });
+        .setFooter(embedFooter(interaction));
 
       const warnEmbed = new EmbedBuilder()
         .setColor("Red")
         .setTitle("> ⚠️ Peringatan Diberikan")
         .setDescription(
           `Kamu (<@${targetUser.id}>) telah menerima peringatan dari <@${interaction.user.id}> karena: **${reason}**` +
-            (timeoutApplied ? "\n\n⏳ Kamu telah di-timeout selama 1 hari karena mencapai 3 peringatan." : "")
+          (timeoutApplied ? "\n\n⏳ Kamu telah di-timeout selama 1 hari karena mencapai 3 peringatan." : "")
         )
         .setTimestamp()
-        .setFooter({
-          text: "Sistem",
-          iconURL: interaction.client.user.displayAvatarURL(),
-        });
+        .setFooter(embedFooter(interaction));
 
       try {
         await targetUser.send({ embeds: [warnEmbed] });
@@ -166,7 +154,7 @@ module.exports = {
       // Send DM to owner about the error
       const webhookClient = new WebhookClient({ url: process.env.WEBHOOK_ERROR_LOGS });
 
-      const errorEmbed = new EmbedBuilder().setColor("Red").setTitle(`> ❌ Error command /warn`).setDescription(`\`\`\`${error}\`\`\``).setFooter(`Error dari server ${interaction.guild.name}`).setTimestamp();
+      const errorEmbed = new EmbedBuilder().setColor("Red").setTitle(`> ❌ Error command /warn`).setDescription(`\`\`\`${error}\`\`\``).setFooter({ text: `Error dari server ${interaction.guild.name}` }).setTimestamp();
 
       // Kirim ke webhook
       webhookClient

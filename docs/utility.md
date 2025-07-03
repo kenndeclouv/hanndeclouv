@@ -83,3 +83,18 @@
 
 ---
 
+
+### /sticky
+
+**Deskripsi:** atur sticky message
+
+### Usage:
+`/sticky set pesan [pesan]`
+
+### Options:
+### Untuk perintah (set > pesan):
+- `pesan` (required) — pesan stickynyaa
+  - **Contoh Penggunaan:** `/sticky set pesan pesan:[value]`
+
+---
+

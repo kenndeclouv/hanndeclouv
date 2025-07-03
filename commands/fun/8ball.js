@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { embedFooter } = require('../../helpers');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -28,7 +29,7 @@ module.exports = {
             .setDescription('Bentar yaa aku ramalin duluu 😋🔮')
             .setColor('Blue')
             .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
-            .setFooter({ text: 'kenndeclouv 8ball engine' })
+            .setFooter(embedFooter(interaction))
             .setTimestamp();
 
         await interaction.reply({ embeds: [thinkingEmbed] });
@@ -40,7 +41,7 @@ module.exports = {
                 .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
                 // .setDescription(`## 🔮 Magic 8 Ball Result\n### **❓ Pertanyaan:**\n${question}\n\n### **🎯 Jawaban:**\n${answer}`)
                 .setDescription(`### **❓ Pertanyaan:**\n${question}\n\n### **🎯 Jawaban:**\n${answer}`)
-                .setFooter({ text: 'semoga jawaban ini memuaskan yaa 😋' })
+                .setFooter(embedFooter(interaction))
                 .setTimestamp();
 
             await interaction.editReply({ embeds: [resultEmbed] });

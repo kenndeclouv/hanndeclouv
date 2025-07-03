@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const User = require("../../database/models/User");
 const Inventory = require("../../database/models/Inventory");
+const User = require("../../database/models/User");
+const { embedFooter } = require("../../helpers");
 
 module.exports = {
   data: new SlashCommandBuilder().setName("inventory").setDescription("Lihat semua item di inventaris kamu."),
@@ -13,12 +14,12 @@ module.exports = {
     }
     await interaction.deferReply();
     try {
-      const user = await User.findOne({ where: { userId: interaction.user.id } });
+      const user = await User.getCache({ userId: interaction.user.id, guildId: interaction.guild.id });
       if (!user) {
         return interaction.editReply({ content: "kamu belum memiliki akun gunakan `/account create` untuk membuat akun." });
       }
 
-      const inventoryItems = await Inventory.findAll({ where: { userId: user.userId } });
+      const inventoryItems = await Inventory.getAllCache({ userId: user.userId });
 
       if (inventoryItems.length === 0) {
         return interaction.editReply({ content: "Inventaris kamu kosong." });
@@ -31,10 +32,10 @@ module.exports = {
 
       const embed = new EmbedBuilder()
         .setColor("Blue")
-        .setTitle("> Inventaris kamu")
+        .setDescription("## 🎒 Inventori kamu")
         .setDescription("Item yang kamu miliki:")
         .setTimestamp()
-        .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+        .setFooter(embedFooter(interaction));
 
       Object.entries(itemCounts).forEach(([itemName, count]) => {
         embed.addFields({ name: `${itemName} (${count})`, value: `kamu memiliki item ini sebanyak ${count} barang`, inline: true });

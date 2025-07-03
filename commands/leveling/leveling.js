@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder, WebhookClient } = require("discord.js");
 const User = require("../../database/models/User");
-const { levelUpXp } = require("../../helpers");
+const { levelUpXp, generateLevelImage, embedFooter } = require("../../helpers");
 require("dotenv").config();
 module.exports = {
   data: new SlashCommandBuilder()
@@ -61,20 +61,29 @@ module.exports = {
             });
           }
 
+          // Generate level profile image (buffer)
+          // const { generateLevelImage } = require("../../helpers");
+          const buffer = await generateLevelImage({
+            username: interaction.user.username,
+            avatarURL: interaction.user.displayAvatarURL({ extension: "png", size: 256 }),
+            level: user.level,
+            xp: user.xp,
+            nextLevelXp: levelUpXp(user.level),
+            backgroundURL: "https://files.catbox.moe/ooketf.png"
+          });
+
           // Membuat embed untuk menampilkan profil level
           const embed = new EmbedBuilder()
             .setColor("Blue")
-            .setTitle("> Profil Level")
-            .setDescription(`**${interaction.user.username}**, Kamu berada di level **${user.level || 0}** dengan total XP **${user.xp || 0}**, **XP saat ini:** ${user.xp}/${levelUpXp(user.level)}.`)
+            // .setTitle("> Profil Level")
+            .setDescription(`## 🎖️ Profil level\n**${interaction.user.username}**, Kamu berada di level **${user.level || 0}** dengan total XP **${user.xp || 0}**, **XP saat ini:** ${user.xp}/${levelUpXp(user.level)}.`)
             .setThumbnail(interaction.user.displayAvatarURL())
+            .setImage("attachment://level-profile.png")
             .setTimestamp()
-            .setFooter({
-              text: `Diminta oleh ${interaction.user.username}`,
-              iconURL: interaction.user.displayAvatarURL(),
-            });
+            .setFooter(embedFooter(interaction));
 
-          // Mengirimkan embed sebagai balasan
-          await interaction.editReply({ embeds: [embed] });
+          // Mengirimkan embed sebagai balasan beserta buffer gambar
+          await interaction.editReply({ embeds: [embed], files: [{ attachment: buffer, name: "level-profile.png" }] });
 
           break; // Added break statement
         }
@@ -85,21 +94,18 @@ module.exports = {
               ["level", "DESC"],
               ["xp", "DESC"],
             ],
-            limit: 3,
+            limit: 10,
           });
 
           const leaderboard = topUsers.map((user, index) => `${index + 1}. <@${user.userId}> - Level **${user.level || 0}** (${user.xp || 0} XP)`).join("\n");
 
           const embed = new EmbedBuilder()
             .setColor("Gold")
-            .setTitle("> Papan Peringkat Level Top 3")
-            .setDescription(leaderboard || "Belum ada data.")
-            .setThumbnail(interaction.client.user.displayAvatarURL())
+            // .setTitle("> Papan Peringkat Level Top 3")
+            .setDescription(`## 🏅 Level Leaderboard\n${leaderboard || "Belum ada data."}`)
+            // .setThumbnail(interaction.client.user.displayAvatarURL())
             .setTimestamp()
-            .setFooter({
-              text: `Sistem Leveling`,
-              iconURL: interaction.client.user.displayAvatarURL(),
-            });
+            .setFooter(embedFooter(interaction));
 
           await interaction.editReply({ embeds: [embed] });
           break; // Added break statement
@@ -116,20 +122,17 @@ module.exports = {
             return interaction.editReply({ content: "Pengguna tidak ditemukan." });
           }
           user.level += interaction.options.getInteger("level");
-          await user.save();
+          user.changed("level", true);
+          await user.saveAndUpdateCache("userId");
           const embed = new EmbedBuilder()
             .setColor("Green")
             .setTitle("> Level Added")
             .setDescription(
-              `Level berhasil ditambahkan ke pengguna **${interaction.options.getUser("user").username}** sebanyak **${interaction.options.getInteger("level")}** level, sekarang levelnya adalah **${
-                user.level
+              `Level berhasil ditambahkan ke pengguna **${interaction.options.getUser("user").username}** sebanyak **${interaction.options.getInteger("level")}** level, sekarang levelnya adalah **${user.level
               }** level.`
             )
             .setTimestamp()
-            .setFooter({
-              text: `sistem leveling`,
-              iconURL: interaction.client.user.displayAvatarURL(),
-            });
+            .setFooter(embedFooter(interaction));
 
           return interaction.editReply({ embeds: [embed], ephemeral: true });
         }
@@ -145,16 +148,14 @@ module.exports = {
             return interaction.editReply({ content: "Pengguna tidak ditemukan." });
           }
           user.level = interaction.options.getInteger("level");
-          await user.save();
+          user.changed("level", true);
+          await user.saveAndUpdateCache("userId");
           const embed = new EmbedBuilder()
             .setColor("Green")
             .setTitle("> Level Set")
             .setDescription(`Level berhasil diatur ke pengguna **${interaction.options.getUser("user").username}** sekarang levelnya adalah **${user.level}** level.`)
             .setTimestamp()
-            .setFooter({
-              text: `sistem leveling`,
-              iconURL: interaction.client.user.displayAvatarURL(),
-            });
+            .setFooter(embedFooter(interaction));
 
           return interaction.editReply({ embeds: [embed], ephemeral: true });
         }
@@ -170,7 +171,8 @@ module.exports = {
             return interaction.editReply({ content: "Pengguna tidak ditemukan." });
           }
           user.xp += interaction.options.getInteger("xp");
-          await user.save();
+          user.changed("xp", true);
+          await user.saveAndUpdateCache("userId");
           const embed = new EmbedBuilder()
             .setColor("Green")
             .setTitle("> XP Added")
@@ -178,10 +180,7 @@ module.exports = {
               `XP berhasil ditambahkan ke pengguna **${interaction.options.getUser("user").username}** sebanyak **${interaction.options.getInteger("xp")}** XP, sekarang XPnya adalah **${user.xp}** XP.`
             )
             .setTimestamp()
-            .setFooter({
-              text: `sistem leveling`,
-              iconURL: interaction.client.user.displayAvatarURL(),
-            });
+            .setFooter(embedFooter(interaction));
 
           return interaction.editReply({ embeds: [embed], ephemeral: true });
         }
@@ -197,16 +196,14 @@ module.exports = {
             return interaction.editReply({ content: "Pengguna tidak ditemukan." });
           }
           user.xp = interaction.options.getInteger("xp");
-          await user.save();
+          user.changed("xp", true);
+          await user.saveAndUpdateCache("userId");
           const embed = new EmbedBuilder()
             .setColor("Green")
             .setTitle("> XP Set")
             .setDescription(`XP berhasil diatur ke pengguna **${interaction.options.getUser("user").username}** sekarang XPnya adalah **${user.xp}** XP.`)
             .setTimestamp()
-            .setFooter({
-              text: `sistem leveling`,
-              iconURL: interaction.client.user.displayAvatarURL(),
-            });
+            .setFooter(embedFooter(interaction));
 
           return interaction.editReply({ embeds: [embed], ephemeral: true });
         }
@@ -216,7 +213,7 @@ module.exports = {
       // Send DM to owner about the error
       const webhookClient = new WebhookClient({ url: process.env.WEBHOOK_ERROR_LOGS });
 
-      const errorEmbed = new EmbedBuilder().setColor("Red").setTitle(`> ❌ Error command /level`).setDescription(`\`\`\`${error}\`\`\``).setFooter(`Error dari server ${interaction.guild.name}`).setTimestamp();
+      const errorEmbed = new EmbedBuilder().setColor("Red").setTitle(`> ❌ Error command /level`).setDescription(`\`\`\`${error}\`\`\``).setFooter({ text: `Error dari server ${interaction.guild.name}` }).setTimestamp();
 
       // Kirim ke webhook
       webhookClient

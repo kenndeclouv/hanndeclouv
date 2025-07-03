@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { checkPermission } = require("../../helpers");
+const { checkPermission, embedFooter } = require("../../helpers");
 const BotSetting = require("../../database/models/BotSetting");
 
 module.exports = {
@@ -50,10 +50,7 @@ module.exports = {
             .setDescription(`**Member:** ${user.tag}\n**Kicked by:** ${interaction.user.tag}\n**Reason:** ${reason}`)
             .setThumbnail(user.displayAvatarURL())
             .setTimestamp()
-            .setFooter({
-              text: `Mod action by ${interaction.user.tag}`,
-              iconURL: interaction.user.displayAvatarURL(),
-            });
+            .setFooter(embedFooter(interaction));
 
           modLogChannel.send({ embeds: [modLogEmbed] });
         }
@@ -64,7 +61,7 @@ module.exports = {
         .setDescription(`**${user.tag}** telah dikeluarkan dari server oleh **${interaction.user.tag}** melalui command.\n**Alasan:** ${reason}`)
         .setThumbnail(interaction.client.user.displayAvatarURL())
         .setTimestamp()
-        .setFooter({ text: `Dikeluarkan oleh ${interaction.user.tag}`, iconURL: interaction.user.displayAvatarURL() });
+        .setFooter(embedFooter(interaction));
       return interaction.reply({ embeds: [embed] });
     } else {
       return interaction.reply({ content: "User tidak ada di server ini!", ephemeral: true });

@@ -1,11 +1,14 @@
-const { SlashCommandBuilder } = require("@discordjs/builders");
 const { EmbedBuilder, version, WebhookClient } = require("discord.js");
-const os = require("os");
+const { SlashCommandBuilder } = require("@discordjs/builders");
+const { embedFooter } = require("../../helpers");
 require("dotenv").config();
+const os = require("os");
 module.exports = {
   data: new SlashCommandBuilder().setName("stats").setDescription("Menampilkan statistik bot."),
   async execute(interaction) {
-    await interaction.channel.sendTyping();
+    if (interaction.guild) {
+      await interaction.channel.sendTyping();
+    }
 
     try {
       const { client } = interaction;
@@ -23,25 +26,29 @@ module.exports = {
       const apiLatency = Math.round(client.ws.ping);
 
       const embed = new EmbedBuilder()
-        .setColor("Purple")
-        .setTitle("> 📊 Statistik Bot")
-        .addFields(
-          { name: "Uptime", value: uptime, inline: true },
-          { name: "Penggunaan Memori", value: `${memoryUsage} MB`, inline: true },
-          { name: "Server", value: `${totalGuilds}`, inline: true },
-          { name: "Pengguna", value: `${totalUsers}`, inline: true },
-          { name: "Node.js", value: nodeVersion, inline: true },
-          { name: "discord.js", value: `v${discordJsVersion}`, inline: true },
-          { name: "CPU", value: cpuModel, inline: false },
-          { name: "Bot Latency", value: `${botLatency}ms`, inline: true },
-          { name: "API Latency", value: `${apiLatency}ms`, inline: true },
-          { name: "Owner", value: ` <@${process.env.OWNER_ID}>`, inline: false }
+        .setColor("Blue") //#8e44ad
+        // .setTitle("✨ Bot Statistik")
+        .setDescription(
+          [
+            "## 📊 **Statistik Bot**",
+            "",
+            `> **Uptime:** \`${uptime}\``,
+            `> **Penggunaan Memori:** \`${memoryUsage} MB\``,
+            `> **Server:** \`${totalGuilds}\`   |   **Pengguna:** \`${totalUsers}\``,
+            "",
+            "### ⚙️ **Teknologi**",
+            `> **Node.js:** \`${nodeVersion}\`   |   **discord.js:** \`v${discordJsVersion}\``,
+            `> **CPU:** \`${cpuModel}\``,
+            "",
+            "### 📶 **Koneksi**",
+            `> **Bot Latency:** \`${botLatency}ms\`   |   **API Latency:** \`${apiLatency}ms\``,
+            "",
+            "### 👑 **Owner**",
+            `> \`kenndeclouv\``
+          ].join("\n")
         )
         .setThumbnail(client.user.displayAvatarURL())
-        .setFooter({
-          text: interaction.client.user.username + " by kenndeclouv",
-          iconURL: interaction.client.user.displayAvatarURL(),
-        })
+        .setFooter(embedFooter(interaction))
         .setTimestamp();
 
       await interaction.editReply({ content: null, embeds: [embed], ephemeral: true });
@@ -49,7 +56,15 @@ module.exports = {
       console.error("Error during stats command execution:", error);
       const webhookClient = new WebhookClient({ url: process.env.WEBHOOK_ERROR_LOGS });
 
-      const errorEmbed = new EmbedBuilder().setColor("Red").setTitle(`> ❌ Error command /stats`).setDescription(`\`\`\`${error}\`\`\``).setFooter(`Error dari server ${interaction.guild.name}`).setTimestamp();
+      const errorEmbed = new EmbedBuilder()
+        .setColor("Red")
+        .setTitle("> ❌ Error command /stats")
+        .setDescription(`\`\`\`${error.stack || error}\`\`\``)
+        .addFields(
+          { name: "User", value: `${interaction.user.tag} (${interaction.user.id})` },
+          ...(interaction.guild ? [{ name: "Guild", value: `${interaction.guild.name} (${interaction.guild.id})` }] : [])
+        )
+        .setTimestamp();
 
       // Kirim ke webhook
       webhookClient
@@ -69,10 +84,10 @@ function formatDuration(ms) {
   const days = Math.floor(ms / (1000 * 60 * 60 * 24));
 
   const parts = [];
-  if (days) parts.push(`${days}h`);
-  if (hours) parts.push(`${hours}j`);
-  if (minutes) parts.push(`${minutes}m`);
-  if (seconds) parts.push(`${seconds}s`);
+  if (days) parts.push(`${days} h`);
+  if (hours) parts.push(`${hours} j`);
+  if (minutes) parts.push(`${minutes} m`);
+  if (seconds) parts.push(`${seconds} s`);
 
   return parts.join(" ");
 }

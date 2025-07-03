@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits } = require("discord.js");
-const { checkPermission } = require("../../helpers");
+const { checkPermission, embedFooter } = require("../../helpers");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("unlock")
@@ -29,20 +29,20 @@ module.exports = {
     await channel.permissionOverwrites.edit(interaction.guild.roles.everyone, { SendMessages: true });
     const lockEmbed = new EmbedBuilder()
       .setColor("Green")
-      .setTitle("> 🔒 Channel UnLocked")
-      .setDescription(`Channel ini telah dibuka oleh <@${interaction.user.id}>`)
+      // .setTitle("> 🔒 Channel UnLocked")
+      .setDescription(`## 🔓 Channel UnLocked\nChannel ini telah dibuka oleh <@${interaction.user.id}>`)
       .setThumbnail(interaction.user.displayAvatarURL())
       .setTimestamp()
-      .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+      .setFooter(embedFooter(interaction));
 
     await channel.send({ embeds: [lockEmbed] });
     const embed = new EmbedBuilder()
       .setColor("Green")
-      .setTitle(`> Unlock channel`)
-      .setDescription(`Channel **${channel.name}** telah dibuka.`)
+      // .setTitle(`> Unlock channel`)
+      .setDescription(`## 🔓 Unlock channel\nChannel **${channel.name}** telah dibuka.`)
       .setThumbnail(interaction.client.user.displayAvatarURL())
       .setTimestamp()
-      .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+      .setFooter(embedFooter(interaction));
     return interaction.editReply({ embeds: [embed] });
   },
 };

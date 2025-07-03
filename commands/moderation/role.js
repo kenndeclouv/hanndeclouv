@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { checkPermission } = require("../../helpers");
+const { checkPermission, embedFooter } = require("../../helpers");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -45,7 +45,7 @@ module.exports = {
     }
 
     // Add or remove the role based on the action
-    const embed = new EmbedBuilder().setThumbnail(interaction.client.user.displayAvatarURL()).setTimestamp().setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+    const embed = new EmbedBuilder().setThumbnail(interaction.client.user.displayAvatarURL()).setTimestamp().setFooter(embedFooter(interaction));
     if (action === "add") {
       // Check if the member already has the role
       if (member.roles.cache.has(role.id)) {

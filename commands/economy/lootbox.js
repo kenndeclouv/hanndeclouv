@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const User = require("../../database/models/User");
 require("dotenv").config();
-const { checkCooldown } = require("../../helpers");
+const { checkCooldown, embedFooter } = require("../../helpers");
 
 module.exports = {
   data: new SlashCommandBuilder().setName("lootbox").setDescription("Buka kotak hadiah untuk mendapatkan hadiah acak."),
@@ -14,9 +14,7 @@ module.exports = {
     }
     await interaction.deferReply();
     try {
-      let user = await User.findOne({
-        where: { userId: interaction.user.id },
-      });
+      let user = await User.getCache({ userId: interaction.user.id, guildId: interaction.guild.id });
       if (!user) {
         return interaction.editReply({ content: "kamu belum memiliki akun gunakan `/account create` untuk membuat akun." });
       }
@@ -31,7 +29,9 @@ module.exports = {
       const randomReward = Math.floor(Math.random() * 401) + 100;
       user.cash += randomReward;
       user.lastLootbox = Date.now();
-      await user.save();
+      user.changed("cash", true);
+      user.changed("lastLootbox", true);
+      await user.saveAndUpdateCache("userId");
 
       const embed = new EmbedBuilder()
         .setColor("Green")
@@ -39,7 +39,7 @@ module.exports = {
         .setThumbnail(interaction.user.displayAvatarURL())
         .setDescription(`kamu membuka kotak hadiah dan menerima **${randomReward} uang**!`)
         .setTimestamp()
-        .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+        .setFooter(embedFooter(interaction));
       await interaction.editReply({ embeds: [embed] });
     } catch (error) {
       console.error("Error during lootbox command execution:", error);

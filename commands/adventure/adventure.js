@@ -1,18 +1,43 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, WebhookClient } = require("discord.js");
 const User = require("../../database/models/UserAdventure"); // Model user buat karakter
 const Inventory = require("../../database/models/InventoryAdventure"); // Buat item & loot
+const { embedFooter } = require("../../helpers");
 require("dotenv").config();
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("adventure")
     .setDescription("Mulai petualanganmu di dunia RPG!")
-    .addSubcommand((subcommand) => subcommand.setName("start").setDescription("Mulai petualanganmu!"))
-    .addSubcommand((subcommand) => subcommand.setName("battle").setDescription("Lawan monster di dungeon!"))
-    .addSubcommand((subcommand) => subcommand.setName("stats").setDescription("Lihat stats karaktermu!"))
-    .addSubcommand((subcommand) => subcommand.setName("inventory").setDescription("Cek barangmu!"))
-    .addSubcommand((subcommand) => subcommand.setName("recall").setDescription("Kembali ke kota!"))
-    .addSubcommand((subcommand) => subcommand.setName("shop").setDescription("Beli item di toko!")),
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName("start")
+        .setDescription("Mulai petualanganmu!")
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName("battle")
+        .setDescription("Lawan monster di dungeon!")
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName("stats")
+        .setDescription("Lihat stats karaktermu!")
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName("inventory")
+        .setDescription("Cek barangmu!")
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName("recall")
+        .setDescription("Kembali ke kota!")
+    )
+    .addSubcommand(subcommand =>
+      subcommand
+        .setName("shop")
+        .setDescription("Beli item di toko!")
+    ),
 
   async execute(interaction) {
     if (!interaction.guild) {
@@ -50,6 +75,7 @@ module.exports = {
         }
       }
 
+
       switch (subcommand) {
         case "start": {
           const embed = new EmbedBuilder()
@@ -57,7 +83,7 @@ module.exports = {
             .setDescription(`## 🎉 Petualanganmu dimulai!\nKamu siap untuk memulai petualanganmu!`)
             .setColor("Blue")
             .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
-            .setFooter({ text: "Petualanganmu dimulai dari sini!", iconURL: interaction.user.displayAvatarURL({ dynamic: true }) })
+            .setFooter(embedFooter(interaction))
             .setTimestamp();
           return interaction.editReply({ embeds: [embed] });
         }
@@ -97,7 +123,7 @@ module.exports = {
 
               { name: `${statEmojis.xp} XP Progress`, value: `${user.xp} / ${xpForNextLevel}\n${progressBar}`, inline: false }
             )
-            .setFooter({ text: "📊 Stats karaktermu!", iconURL: interaction.client.user.displayAvatarURL({ dynamic: true }) })
+            .setFooter(embedFooter(interaction))
             .setTimestamp();
 
           return interaction.editReply({ embeds: [embed] });
@@ -111,7 +137,7 @@ module.exports = {
               .setColor("Blue")
               .setDescription(`## 🔍 Inventorimu kosong!\nKamu bisa mengambil item di sini!`)
               .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
-              .setFooter({ text: "Kamu bisa mengambil item di sini!", iconURL: interaction.user.displayAvatarURL({ dynamic: true }) })
+              .setFooter(embedFooter(interaction))
               .setTimestamp();
 
             return interaction.editReply({ embeds: [embed] });
@@ -134,10 +160,10 @@ module.exports = {
 
           const embed = new EmbedBuilder()
             .setColor("Blue")
-            .setTitle(`## 🎒 Inventorimu ${interaction.user.username}`)
-            .setDescription(`Berikut adalah isi inventorimu:\n\n${itemList}`)
+            // .setTitle(`##🎒 Inventorimu ${interaction.user.username}`)
+            .setDescription(`## 🎒 Inventorimu ${interaction.user.username}\nBerikut adalah isi inventorimu:\n\n${itemList}`)
             .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
-            .setFooter({ text: "Gunakan itemmu dengan bijak!", iconURL: interaction.user.displayAvatarURL({ dynamic: true }) })
+            .setFooter(embedFooter(interaction))
             .setTimestamp();
 
           return interaction.editReply({ embeds: [embed] });
@@ -194,7 +220,7 @@ module.exports = {
                       // .setTitle(`> Kamu Bangkit!`)
                       .setDescription(`## 😇 Kamu Bangkit!\nKamu dibangkitkan oleh 🍶 Revival.\nKamu siap bertarung lagi!`)
                       .setColor("Green")
-                      .setFooter({ text: "Petualanganmu belum berakhir!", iconURL: interaction.client.user.displayAvatarURL({ dynamic: true }) }),
+                      .setFooter(embedFooter(interaction)),
                   ],
                   components: [continueButton],
                   end: false
@@ -210,7 +236,7 @@ module.exports = {
                     // .setTitle(`> Kamu Kalah!`)
                     .setDescription(`## 💀 Kamu Kalah!\nKamu dikalahkan monster! Tapi kamu bangkit lagi dengan **${user.hp} HP**.`)
                     .setColor("Red")
-                    .setFooter({ text: "Petualanganmu belum berakhir!", iconURL: interaction.client.user.displayAvatarURL({ dynamic: true }) }),
+                    .setFooter(embedFooter(interaction)),
                 ],
                 components: [continueButton],
                 end: true
@@ -245,7 +271,7 @@ module.exports = {
                       // .setTitle(`> Level Up!`)
                       .setDescription(`## 🎉 Level Up!\nKamu naik ke level **${user.level}**!\nStatistikmu meningkat! 💪`)
                       .setColor("Green")
-                      .setFooter({ text: "Teruskan petualanganmu!", iconURL: interaction.user.displayAvatarURL({ dynamic: true }) }),
+                      .setFooter(embedFooter(interaction)),
                   ],
                   components: [continueButton],
                   end: true
@@ -259,7 +285,7 @@ module.exports = {
                     // .setTitle(`> Kamu Menang!`)
                     .setDescription(`## 🎉 Kamu Menang!\nKamu mengalahkan **${monsterName}**!\nKamu mendapatkan **${goldEarned} gold** dan **${xpEarned} XP**!`)
                     .setColor("Green")
-                    .setFooter({ text: "Teruskan petualanganmu!", iconURL: interaction.user.displayAvatarURL({ dynamic: true }) }),
+                    .setFooter(embedFooter(interaction)),
                 ],
                 components: [continueButton],
                 end: true
@@ -281,7 +307,7 @@ module.exports = {
                     { name: `💖 HP Kamu`, value: generateHpBar(user.hp), inline: false },
                     { name: `👹 HP ${user.monsterName}`, value: generateHpBar(user.monsterHp), inline: false }
                   )
-                  .setFooter({ text: "Teruskan petualanganmu!", iconURL: interaction.user.displayAvatarURL({ dynamic: true }) }),
+                  .setFooter(embedFooter(interaction)),
               ],
               components: [continueButton],
               end: false
@@ -379,136 +405,18 @@ module.exports = {
             .setDescription(`## 🏠 Recall\nKamu recall dan kembali ke kota!\nHP kamu diisi kembali!`)
             .setColor("Blue")
             .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
-            .setFooter({ text: "Kamu kembali ke kota!", iconURL: interaction.user.displayAvatarURL({ dynamic: true }) })
+            .setFooter(embedFooter(interaction))
             .setTimestamp();
           return interaction.editReply({ embeds: [embed] });
         }
 
-        // case "shop": {
-        //   try {
-        //     if (!user) {
-        //       return interaction.editReply({ content: "kamu belum memiliki akun gunakan `/adventure start` untuk membuat akun." });
-        //     }
-
-        //     const items = [
-        //       { name: "🛡️ Shield", price: 10, description: "Perisai yang kokoh untuk melindungi diri memberikan defense +10." },
-        //       { name: "⚔️ Sword", price: 15, description: "Pedang yang kuat untuk bertarung melawan monster memberikan strength +10." },
-        //       { name: "🥋 Armor", price: 30, description: "Armor yang kokoh untuk melindungi diri memberikan defense +15." },
-        //       { name: "🍶 Revival", price: 35, description: "Menghidupkan kembali tanpa harus mati HP +100." },
-        //     ];
-
-        //     const embed = new EmbedBuilder()
-        //       .setColor("Blue")
-        //       // .setTitle("> Toko")
-        //       .setDescription(`## 🛒 Shop\nSelamat datang di toko adventure! Pilih item yang ingin kamu beli:`)
-        //       .setTimestamp()
-        //       .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
-
-        //     items.forEach((item) => {
-        //       embed.addFields({ name: `${item.name}`, value: `Harga: **${item.price}** gold\n${item.description}`, inline: true });
-        //     });
-
-        //     const row = new ActionRowBuilder().addComponents(
-        //       new StringSelectMenuBuilder()
-        //         .setCustomId("select_item_adventure")
-        //         .setPlaceholder("Pilih item untuk dibeli")
-        //         .addOptions(
-        //           items.map((item) => ({
-        //             label: item.name,
-        //             description: `Harga: ${item.price} gold`,
-        //             value: item.name.toLowerCase(),
-        //           }))
-        //         )
-        //     );
-
-        //     await interaction.editReply({ embeds: [embed], components: [row] });
-
-        //     const filter = (i) => i.user.id === interaction.user.id;
-        //     const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000 });
-
-        //     collector.on("collect", async (i) => {
-        //       if (i.customId === "select_item_adventure") {
-        //         await i.deferUpdate();
-        //         const selectedItem = items.find((item) => item.name.toLowerCase() === i.values[0]);
-
-        //         if (!selectedItem) return;
-
-        //         if (user.gold < selectedItem.price) {
-        //           await interaction.editReply({
-        //             content: "kamu tidak memiliki gold yang cukup untuk membeli item ini.",
-        //             embeds: [], // hapus embed
-        //             components: [],
-        //           });
-        //           return;
-        //         }
-
-        //         const confirmRow = new ActionRowBuilder().addComponents(
-        //           new ButtonBuilder().setCustomId("confirm_purchase_adventure").setLabel("Konfirmasi Pembelian").setStyle(ButtonStyle.Success),
-        //           new ButtonBuilder().setCustomId("cancel_purchase_adventure").setLabel("Batal").setStyle(ButtonStyle.Danger)
-        //         );
-
-        //         await interaction.editReply({
-        //           content: `kamu akan membeli **${selectedItem.name}** seharga **${selectedItem.price} gold**. Konfirmasi pembelian?`,
-        //           embeds: [], // hapus embed
-        //           components: [confirmRow],
-        //         });
-
-        //         const confirmationFilter = (btn) => btn.user.id === interaction.user.id;
-        //         const confirmationCollector = interaction.channel.createMessageComponentCollector({ filter: confirmationFilter, time: 15000, max: 1 });
-
-        //         confirmationCollector.on("collect", async (btn) => {
-        //           await btn.deferUpdate();
-        //           if (btn.customId === "confirm_purchase_adventure") {
-        //             user.gold -= selectedItem.price;
-        //             // await user.save();
-        //             await user.saveAndUpdateCache();
-
-        //             await Inventory.create({
-        //               guildId: user.guildId,
-        //               userId: user.userId,
-        //               itemName: selectedItem.name,
-        //             });
-        //             await Inventory.clearCache({ userId: user.userId });
-        //             await interaction.editReply({
-        //               content: `kamu berhasil membeli **${selectedItem.name}**!`,
-        //               embeds: [], // hapus embed
-        //               components: [],
-        //             });
-        //           } else if (btn.customId === "cancel_purchase_adventure") {
-        //             await interaction.editReply({
-        //               content: "Pembelian dibatalkan.",
-        //               embeds: [], // hapus embed
-        //               components: [],
-        //             });
-        //           }
-        //         });
-
-        //         confirmationCollector.on("end", () => {
-        //           interaction.editReply({
-        //             components: [],
-        //           });
-        //         });
-        //       }
-        //     });
-
-        //     collector.on("end", () => {
-        //       interaction.editReply({
-        //         content: "Waktu habis. Silakan gunakan kembali perintah `/adventure shop` untuk mengakses toko.",
-        //         embeds: [], // hapus embed
-        //         components: [],
-        //       });
-        //     });
-        //   } catch (error) {
-        //     console.error("Error during shop command execution:", error);
-        //     return interaction.editReply({ content: "❌ Terjadi kesalahan saat menjalankan perintah ini. Silakan coba lagi." });
-        //   }
-        // }
         case "shop": {
           try {
             if (!user) {
               const noAccountEmbed = new EmbedBuilder()
                 .setColor('Red')
-                .setDescription('🚫 Kamu belum memiliki akun! Gunakan `/adventure start` untuk membuat akun.');
+                .setDescription('🚫 Kamu belum memiliki akun! Gunakan `/adventure start` untuk membuat akun.')
+                .setFooter(embedFooter(interaction));
               return interaction.editReply({ embeds: [noAccountEmbed], components: [] });
             }
 
@@ -606,7 +514,8 @@ module.exports = {
                     const cancelEmbed = new EmbedBuilder()
                       .setColor('Grey')
                       // .setTitle('❌ Pembelian Dibatalkan')
-                      .setDescription(`## ❌ Pembelian Dibatalkan\nKamu membatalkan pembelian ${selectedItem.name}.`);
+                      .setDescription(`## ❌ Pembelian Dibatalkan\nKamu membatalkan pembelian ${selectedItem.name}.`)
+                      .setFooter(embedFooter(interaction));
                     await interaction.editReply({ embeds: [cancelEmbed], components: [] });
                   }
                 });
@@ -621,7 +530,8 @@ module.exports = {
               const timeoutEmbed = new EmbedBuilder()
                 .setColor('Red')
                 // .setTitle('⏱️ Waktu Habis')
-                .setDescription(`## ⏱️ Waktu Habis\nKamu terlalu lama memilih item. Gunakan kembali perintah \`/adventure shop\` untuk membuka toko.`);
+                .setDescription(`## ⏱️ Waktu Habis\nKamu terlalu lama memilih item. Gunakan kembali perintah \`/adventure shop\` untuk membuka toko.`)
+                .setFooter(embedFooter(interaction));
               interaction.editReply({ embeds: [timeoutEmbed], components: [] }).catch(() => { });
             });
           } catch (error) {
@@ -629,7 +539,8 @@ module.exports = {
             const errorEmbed = new EmbedBuilder()
               .setColor('Red')
               // .setTitle('❌ Terjadi Kesalahan')
-              .setDescription(`## ❌ Terjadi Kesalahan\nTerjadi kesalahan saat menjalankan perintah. Silakan coba lagi nanti.`);
+              .setDescription(`## ❌ Terjadi Kesalahan\nTerjadi kesalahan saat menjalankan perintah. Silakan coba lagi nanti.`)
+              .setFooter(embedFooter(interaction));
             return interaction.editReply({ embeds: [errorEmbed], components: [] });
           }
         }
@@ -685,7 +596,7 @@ module.exports = {
         .setColor("Red")
         .setTitle(`> ❌ Error command /adventure`)
         .setDescription(`\`\`\`${error}\`\`\``)
-        .setFooter(`Error dari server ${interaction.guild.name}`)
+        .setFooter(embedFooter(interaction))
         .setTimestamp();
 
       // Kirim ke webhook

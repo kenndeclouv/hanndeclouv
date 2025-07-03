@@ -1,36 +1,45 @@
-## 📁 Command: invites
+## 📁 Command Category: invites
 
 ### /invites
 
-**Deskripsi:** Kelola undangan dan hadiah
+**Description:** Kelola undangan dan hadiah
 
 ### Usage:
-`/invites user user [user]`
-`/invites add user [user]`
-`/invites add number [number]`
-`/invites remove user [user]`
-`/invites remove number [number]`
-`/invites reset user [user]`
+- `/invites user user:@user`
+- `/invites add user:@user number:100`
+- `/invites remove user:@user number:100`
+- `/invites leaderboard`
+- `/invites reset user:@user`
 
 ### Options:
-### Untuk perintah (user > user):
-- `user` (required) — Pengguna yang akan diperiksa
-  - **Contoh Penggunaan:** `/invites user user user:[value]`
-### Untuk perintah (add > user):
-- `user` (required) — Pengguna yang akan ditambahkan undangannya
-  - **Contoh Penggunaan:** `/invites add user user:[value]`
-### Untuk perintah (add > number):
-- `number` (required) — Jumlah undangan
-  - **Contoh Penggunaan:** `/invites add number number:[value]`
-### Untuk perintah (remove > user):
-- `user` (required) — Pengguna yang akan dihapus undangannya
-  - **Contoh Penggunaan:** `/invites remove user user:[value]`
-### Untuk perintah (remove > number):
-- `number` (required) — Jumlah undangan
-  - **Contoh Penggunaan:** `/invites remove number number:[value]`
-### Untuk perintah (reset > user):
-- `user` (required) — Pengguna yang akan diatur ulang
-  - **Contoh Penggunaan:** `/invites reset user user:[value]`
+### For `user`:
+Periksa undangan pengguna
+- `user` (User) **[Required]**
+  - Pengguna yang akan diperiksa
+
+### For `add`:
+Tambahkan undangan ke pengguna (Hanya pemilik)
+- `user` (User) **[Required]**
+  - Pengguna yang akan ditambahkan undangannya
+- `number` (Number) **[Required]**
+  - Jumlah undangan
+
+### For `remove`:
+Hapus undangan dari pengguna (Hanya pemilik)
+- `user` (User) **[Required]**
+  - Pengguna yang akan dihapus undangannya
+- `number` (Number) **[Required]**
+  - Jumlah undangan
+
+### For `leaderboard`:
+Lihat papan peringkat pengundang teratas
+*No options*
+
+### For `reset`:
+Atur ulang undangan pengguna (Hanya pemilik)
+- `user` (User) **[Required]**
+  - Pengguna yang akan diatur ulang
+
 
 ---
 

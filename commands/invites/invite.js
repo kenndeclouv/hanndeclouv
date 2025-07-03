@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits, EmbedBuilder, WebhookClient } = require("discord.js");
 const Invite = require("../../database/models/Invite"); // Assuming you have an Invite model
-const { checkPermission } = require("../../helpers");
+const { checkPermission, embedFooter } = require("../../helpers");
 require("dotenv").config();
 module.exports = {
   data: new SlashCommandBuilder()
@@ -56,13 +56,13 @@ module.exports = {
       }
       const embed = new EmbedBuilder()
         .setColor("Blue")
-        .setFooter({ text: "Sistem", iconURL: interaction.client.user.displayAvatarURL() })
+        .setFooter(embedFooter(interaction))
         .setTimestamp()
         .setThumbnail(interaction.client.user.displayAvatarURL());
       switch (subcommand) {
         case "user": {
           // Check a user's invites
-          const userInvites = await Invite.findOne({ where: { userId: targetUser.id, guildId } });
+          const userInvites = await Invite.getCache({ userId: targetUser.id, guildId });
           const invitesCount = userInvites ? userInvites.invites : 0;
           const userEmbed = embed.setDescription(`${targetUser.username} memiliki ${invitesCount} undangan.`);
           return interaction.editReply({ embeds: [userEmbed] });
@@ -77,7 +77,7 @@ module.exports = {
 
         case "remove": {
           // Remove invites from a user
-          const userInvites = await Invite.findOne({ where: { userId: targetUser.id, guildId } });
+          const userInvites = await Invite.getCache({ userId: targetUser.id, guildId });
           const updatedInvites = userInvites ? userInvites.invites - number : -number;
           await Invite.upsert({ userId: targetUser.id, guildId, invites: updatedInvites });
           const removeEmbed = embed.setDescription(`Menghapus ${number} undangan dari ${targetUser.username}. Sekarang mereka memiliki ${updatedInvites} undangan.`);
@@ -101,7 +101,7 @@ module.exports = {
             .setTitle("🏆 Papan Peringkat Undangan")
             .setColor("Gold")
             .setDescription(leaderboard)
-            .setFooter({ text: `Top ${topInviters.length} pengundang di ${interaction.guild.name}`, iconURL: interaction.client.user.displayAvatarURL() })
+            .setFooter(embedFooter(interaction))
             .setTimestamp();
 
           return interaction.editReply({ embeds: [leaderboardEmbed] });
@@ -119,7 +119,7 @@ module.exports = {
       // Send DM to owner about the error
       const webhookClient = new WebhookClient({ url: process.env.WEBHOOK_ERROR_LOGS });
 
-      const errorEmbed = new EmbedBuilder().setColor("Red").setTitle(`> ❌ Error command /invite`).setDescription(`\`\`\`${error}\`\`\``).setFooter(`Error dari server ${interaction.guild.name}`).setTimestamp();
+      const errorEmbed = new EmbedBuilder().setColor("Red").setTitle(`> ❌ Error command /invite`).setDescription(`\`\`\`${error}\`\`\``).setFooter({ text: `Error dari server ${interaction.guild.name}` }).setTimestamp();
 
       // Kirim ke webhook
       webhookClient

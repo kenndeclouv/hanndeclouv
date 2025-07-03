@@ -1,12 +1,7 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const { EmbedBuilder, WebhookClient } = require("discord.js");
+const { embedFooter } = require("../../helpers");
 require("dotenv").config();
-
-const { t } = require("../../helpers");
-const getLang = async (guildId) => {
-  // TODO: Replace with DB lookup if needed
-  return "id";
-};
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -22,16 +17,14 @@ module.exports = {
     }
     await interaction.deferReply();
     try {
-      const lang = await getLang(interaction.guildId);
-
       const user = interaction.options.getUser("user") || interaction.user;
       const avatarURL = user.displayAvatarURL({ dynamic: true, size: 1024 });
       const embed = new EmbedBuilder()
-        .setColor("Random")
+        .setColor("Blue")
         .setAuthor({ name: user.tag, iconURL: user.displayAvatarURL() })
         .setDescription(`[Download Avatar](${avatarURL})`)
         .setImage(avatarURL)
-        .setFooter({ text: t("AVATAR_FOOTER", lang) })
+        .setFooter(embedFooter(interaction))
         .setTimestamp();
       await interaction.editReply({ embeds: [embed] });
     } catch (error) {
@@ -52,7 +45,7 @@ module.exports = {
           embeds: [errorEmbed],
         })
         .catch(console.error);
-      return interaction.editReply({ content: t("ERROR", lang) });
+      return interaction.editReply({ content: "❌ | Terjadi kesalahan saat menjalankan perintah ini. Silakan coba lagi." });
     }
   },
 };

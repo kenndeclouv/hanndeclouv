@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { checkPermission } = require("../../helpers");
+const { checkPermission, embedFooter } = require("../../helpers");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("unpin")
@@ -32,11 +32,11 @@ module.exports = {
     await message.unpin();
     const embed = new EmbedBuilder()
       .setColor("Green")
-      .setTitle(`> Unpin message`)
-      .setDescription(`Pesan dengan ID **${messageId}** telah diunpin.`)
+      // .setTitle(`> Unpin message`)
+      .setDescription(`## 📌 Unpin message\nPesan dengan ID **${messageId}** telah diunpin.`)
       .setThumbnail(interaction.client.user.displayAvatarURL())
       .setTimestamp()
-      .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+      .setFooter(embedFooter(interaction));
     return interaction.editReply({ embeds: [embed] });
   },
 };

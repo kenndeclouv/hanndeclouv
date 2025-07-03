@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const User = require("../../database/models/User");
+const { embedFooter } = require("../../helpers");
 
 module.exports = {
   data: new SlashCommandBuilder().setName("bank").setDescription("Cek saldo bank kamu."),
@@ -12,20 +13,18 @@ module.exports = {
     }
     await interaction.deferReply();
     try {
-      let user = await User.findOne({
-        where: { userId: interaction.user.id },
-      });
+      let user = await User.getCache({ userId: interaction.user.id, guildId: interaction.guild.id });
       if (!user) {
         return interaction.reply({ content: "kamu belum memiliki akun gunakan `/account create` untuk membuat akun." });
       }
 
       const embed = new EmbedBuilder()
         .setColor("Green")
-        .setTitle("> 💵 Saldo Bank")
+        .setDescription("## 💵 Saldo Bank")
         .setThumbnail(interaction.user.displayAvatarURL())
         .setDescription(`**${interaction.user.username}**, kamu memiliki **${user.cash} uang tunai** dan **${user.bank} di bank ${user.bankType}**, total **${user.cash + user.bank} uang**`)
         .setTimestamp()
-        .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+        .setFooter(embedFooter(interaction));
       return interaction.editReply({ embeds: [embed] });
     } catch (error) {
       console.error("Error during bank command execution:", error);

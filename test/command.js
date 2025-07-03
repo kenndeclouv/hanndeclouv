@@ -1,58 +1,66 @@
 const fs = require("fs");
 const path = require("path");
 
+/**
+ * Mensimulasikan objek interaksi Discord untuk pengujian.
+ * @class
+ */
 class MockInteraction {
-  constructor({ commandName, subcommandName = null, optionsData = {} }) {
+  constructor({ commandName, subcommandName = null, optionsData = {}, mode = "guild" }) { // mode = guild|dm
     this.commandName = commandName;
     this.optionsData = optionsData;
-    this.guildId = "1314236534484112370";
-    this.user = { id: "123456789012345678" };
+    this.guildId = mode === "guild" ? "1314236534484112370" : null;
+    this.guild = mode === "guild"
+      ? { id: "1314236534484112370", name: "kenndeclouv test server" }
+      : null;
+    this.channel = {
+      id: "1314236534484111375",
+      name: "🏠┃general",
+      send: (msg) => {
+        console.log(`💬 [channel.send]`, msg);
+        return Promise.resolve({ id: "mock-msg-id" });
+      },
+      sendTyping: () => console.log("⌨️ [channel.sendTyping]"),
+    };
+    this.user = { id: "1158654757183959091", username: "kenndeclouv" };
     this.deferred = false;
     this.replied = false;
 
-    // Enhanced mock options to handle all Discord option types
+    // Mock options yang disempurnakan untuk menangani semua jenis opsi Discord
     this.options = {
       getSubcommand: () => subcommandName,
-      getString: (name) => optionsData[name] || "dummy_string_" + Math.random().toString(36).slice(2),
-      getInteger: (name) => optionsData[name] || Math.floor(Math.random() * 1000),
-      getNumber: (name) => optionsData[name] || Math.random() * 1000,
-      getBoolean: (name) => optionsData[name] || true,
-      getUser: (name) =>
-        optionsData[name] || {
-          id: "1365429439332089998",
-          username: "meiyiyiyun",
-          bot: false,
-          avatar: "https://cdn.discordapp.com/avatars/1365429439332089998/b94ad6c770ec3cb1966485e44dce25ab?size=1024",
-        },
-      getChannel: (name) =>
-        optionsData[name] || {
-          id: "1314236534484111375",
-          name: "🏠┃general",
-          type: 0,
-          send: () => Promise.resolve(),
-        },
-      getRole: (name) =>
-        optionsData[name] || {
-          id: "1314579201759907865",
-          name: "[👑] DECLOUV FAM",
-          color: 0xffffff,
-          permissions: "ADMINISTRATOR",
-        },
-      getAttachment: (name) =>
-        optionsData[name] || {
-          url: "https://dummy.img",
-          proxyURL: "https://dummy-proxy.img",
-          name: "dummy.png",
-        },
-      getMentionable: (name) => optionsData[name] || { id: "1314376223580881017", type: "mentionable" },
-      getStringChoices: () => optionsData.choices || ["choice1", "choice2"],
+      getString: (name) => name in optionsData ? optionsData[name] : "dummy_string_" + Math.random().toString(36).slice(2),
+      getInteger: (name) => name in optionsData ? optionsData[name] : Math.floor(Math.random() * 1000),
+      getNumber: (name) => name in optionsData ? optionsData[name] : Math.random() * 1000,
+      getBoolean: (name) => name in optionsData ? optionsData[name] : true,
+      getUser: (name) => name in optionsData ? optionsData[name] : {
+        id: "1365429439332089998",
+        username: "meiyiyiyun",
+        bot: false,
+        avatar: "https://cdn.discordapp.com/avatars/1365429439332089998/b94ad6c770ec3cb1966485e44dce25ab?size=1024",
+      },
+      getChannel: (name) => name in optionsData ? optionsData[name] : {
+        id: "1314236534484111375",
+        name: "🏠┃general",
+        type: 0,
+        send: () => Promise.resolve(),
+      },
+      getRole: (name) => name in optionsData ? optionsData[name] : {
+        id: "1314579201759907865",
+        name: "[👑] DECLOUV FAM",
+        color: 0xffffff,
+        permissions: "ADMINISTRATOR",
+      },
+      getAttachment: (name) => name in optionsData ? optionsData[name] : {
+        url: "https://dummy.img",
+        proxyURL: "https://dummy-proxy.img",
+        name: "dummy.png",
+      },
+      getMentionable: (name) => name in optionsData ? optionsData[name] : { id: "1314376223580881017", type: "mentionable" },
     };
   }
 
-  // Interaction methods
-  isCommand() {
-    return true;
-  }
+  isCommand() { return true; }
 
   deferReply(options) {
     this.deferred = true;
@@ -85,8 +93,12 @@ class MockInteraction {
   }
 }
 
+/**
+ * Menghasilkan data dummy berdasarkan tipe opsi perintah.
+ * @param {object} option - Objek opsi perintah.
+ * @returns {*} Data dummy yang sesuai.
+ */
 function generateDummyData(option) {
-  // Generate more realistic dummy data based on option requirements
   const generate = {
     3: () => `dummy_${option.name}_${Math.random().toString(36).slice(2)}`, // STRING
     4: () => Math.floor(Math.random() * 1000), // INTEGER
@@ -97,32 +109,34 @@ function generateDummyData(option) {
     10: () => Math.random() * 1000, // NUMBER
     11: () => ({ url: `https://dummy.com/${Date.now()}.png` }), // ATTACHMENT
   };
-
   return generate[option.type] ? generate[option.type]() : null;
 }
 
+/**
+ * Fungsi utama untuk menjalankan semua tes perintah.
+ */
 (async () => {
-  console.log("🚀 Starting comprehensive command testing...\n");
+  console.log("🚀 Memulai pengujian perintah secara komprehensif...\n");
 
-  const commandsPath = path.join(__dirname, "../commands");
+  const slashCommandsPath = path.join(__dirname, "../commands");
 
-  // Fungsi rekursif untuk cari semua file .js
+  // Fungsi rekursif untuk mencari semua file .js
   const getCommandFiles = (dir) => {
     const files = fs.readdirSync(dir, { withFileTypes: true });
-
     return files
       .flatMap((file) => {
         const res = path.resolve(dir, file.name);
         return file.isDirectory() ? getCommandFiles(res) : res;
       })
       .filter(
-        (file) => file.endsWith(".js") && !file.includes("_") && !file.includes("test") // Skip file test
+        (file) => file.endsWith(".js") && !file.includes("_") && !file.includes("test")
       );
   };
 
-  const commandFiles = getCommandFiles(commandsPath);
-  console.log(`🔍 Found ${commandFiles.length} command files:`);
-  commandFiles.forEach((file) => console.log(`- ${path.relative(commandsPath, file)}`));
+  const commandFiles = getCommandFiles(slashCommandsPath);
+  console.log(`🔍 Ditemukan ${commandFiles.length} file perintah:`);
+  commandFiles.forEach((file) => console.log(`- ${path.relative(slashCommandsPath, file)}`));
+  console.log("\n" + "-".repeat(30) + "\n");
 
   let totalTests = 0;
   let successfulTests = 0;
@@ -132,69 +146,103 @@ function generateDummyData(option) {
     const command = require(filePath);
     if (!command.data?.name || !command.execute) continue;
 
-    const processCommand = async (commandData, parentCommand = null) => {
-      const commandPath = parentCommand ? `${parentCommand.name} ${commandData.name}` : commandData.name;
+    // ======================= FIX UTAMA =======================
+    // 1. Konversi builder ke objek JSON. Ini memperbaiki masalah `.choices`.
+    const commandJSON = typeof command.data.toJSON === 'function' ? command.data.toJSON() : command.data;
+    // =========================================================
 
-      // Handle subcommand groups
-      if (commandData.type === 2) {
-        for (const subcommand of commandData.options || []) {
-          await processCommand(subcommand, commandData);
+    /**
+     * Memproses dan menguji satu unit perintah (bisa perintah utama, grup, atau subcommand).
+     * @param {object} commandToTest - Objek perintah/subcommand yang akan diuji.
+     * @param {object|null} parentCommand - Parent dari commandToTest (misalnya, grup untuk subcommand).
+     */
+    const processCommand = async (commandToTest, parentCommand = null) => {
+      const commandPath = parentCommand ? `${parentCommand.name} ${commandToTest.name}` : commandToTest.name;
+
+      // Jika ini adalah grup subcommand, lakukan rekursi ke dalam setiap subcommand-nya.
+      if (commandToTest.type === 2) { // 2 = SUB_COMMAND_GROUP
+        for (const subcommand of commandToTest.options || []) {
+          await processCommand(subcommand, commandToTest);
         }
         return;
       }
 
-      // Build options data
+      // Pada titik ini, commandToTest adalah perintah utama atau subcommand tunggal.
+      // Keduanya dapat memiliki opsi yang perlu diisi data dummy.
       const dummyOptions = {};
-      for (const opt of commandData.options || []) {
-        dummyOptions[opt.name] = generateDummyData(opt);
+      // Opsi untuk diproses adalah milik commandToTest.
+      const optionsToProcess = commandToTest.options || [];
 
-        // Handle choices if present
-        if (opt.choices?.length) {
-          dummyOptions[opt.name] = opt.choices[Math.floor(Math.random() * opt.choices.length)].value;
+      for (const opt of optionsToProcess) {
+        // Lewati jika opsi adalah subcommand/grup karena sudah ditangani di atas.
+        if (opt.type === 1 || opt.type === 2) continue;
+
+        if (opt.choices?.length > 0) {
+          // ✅ INI SEKARANG BERFUNGSI: Pilih dari choices yang tersedia.
+          const selected = opt.choices[Math.floor(Math.random() * opt.choices.length)];
+          dummyOptions[opt.name] = selected.value;
+        } else {
+          // Generate data dummy jika tidak ada choices.
+          dummyOptions[opt.name] = generateDummyData(opt);
         }
       }
 
-      // Create mock interaction
+      // Tentukan nama perintah dan subcommand untuk MockInteraction.
+      const rootCommandName = commandJSON.name; // Selalu gunakan nama dari file perintah utama.
+      let subcommandName = null;
+      if (parentCommand) {
+        // Jika ada parent, berarti commandToTest adalah subcommand.
+        subcommandName = commandToTest.name;
+      }
+
       const mock = new MockInteraction({
-        commandName: parentCommand ? parentCommand.name : commandData.name,
-        subcommandName: commandData.type === 1 ? commandData.name : null,
+        commandName: rootCommandName,
+        subcommandName: subcommandName,
         optionsData: dummyOptions,
       });
 
-      // Execute test
+      // Jalankan tes
       try {
         totalTests++;
-        console.log(`🧪 Testing /${commandPath}`);
+        console.log(`🧪 Menguji /${commandPath}`);
         await command.execute(mock);
 
         if (!mock.deferred && !mock.replied) {
-          throw new Error("Command did not reply or defer!");
+          throw new Error("Perintah tidak membalas atau menunda (defer)!");
         }
 
         successfulTests++;
-        console.log(`✅ Success: /${commandPath}\n`);
+        console.log(`✅ Sukses: /${commandPath}\n`);
       } catch (error) {
         failedTests++;
-        console.error(`❌ FAILED: /${commandPath}`);
+        console.error(`❌ GAGAL: /${commandPath}`);
         console.error("Error:", error.stack || error, "\n");
       }
     };
 
-    // Process main command and subcommands
-    if (command.data.options?.length) {
-      for (const option of command.data.options) {
-        await processCommand(option, command.data);
+    // ======================= FIX UTAMA =======================
+    // 2. Logika yang lebih baik untuk membedakan perintah dengan subcommand vs. opsi biasa.
+    const hasSubcommands = commandJSON.options?.some(opt => opt.type === 1 || opt.type === 2);
+
+    if (hasSubcommands) {
+      // Jika ada subcommand/grup, proses setiap opsi level atas satu per satu.
+      for (const option of commandJSON.options) {
+        await processCommand(option, commandJSON);
       }
     } else {
-      await processCommand(command.data);
+      // Jika hanya perintah sederhana (dengan atau tanpa opsi), proses perintah itu sendiri.
+      await processCommand(commandJSON);
     }
+    // =========================================================
   }
 
-  // Print final report
-  console.log("📊 Test Summary:");
-  console.log(`Total Commands Tested: ${commandFiles.length}`);
-  console.log(`Total Tests Executed: ${totalTests}`);
-  console.log(`Success: ${successfulTests}`);
-  console.log(`Failed: ${failedTests}`);
-  console.log("\n🎉 All commands tested! 💻🔧");
+  // Cetak laporan akhir
+  console.log("\n" + "=".repeat(40));
+  console.log("📊 Ringkasan Tes:");
+  console.log(`Total Perintah Diuji: ${commandFiles.length}`);
+  console.log(`Total Tes Dieksekusi: ${totalTests}`);
+  console.log(`✅ Sukses: ${successfulTests}`);
+  console.log(`❌ Gagal: ${failedTests}`);
+  console.log("=".repeat(40) + "\n");
+  console.log("🎉 Semua perintah telah diuji! 💻🔧");
 })();

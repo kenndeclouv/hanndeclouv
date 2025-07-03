@@ -24,7 +24,7 @@ module.exports = {
         .setColor("Red")
         .setTitle(`> ❌ Error command /restart`)
         .setDescription(`\`\`\`${error}\`\`\``)
-        .setFooter(`Error dari server ${interaction.guild.name}`)
+        .setFooter({ text: `Error dari server ${interaction.guild.name}` })
         .setTimestamp();
 
       // Kirim ke webhook
@@ -64,8 +64,8 @@ module.exports = {
             `• Gunakan perintah \`/help\` untuk melihat semua fitur dan commandku.\n` +
             `• Atur pengaturan server dengan \`/set\` (khusus admin).\n` +
             `• Cek websiteku di [kenndeclouv.my.id](https://kenndeclouv.my.id) untuk dokumentasi dan info lebih lanjut.\n\n` +
-            `Jika butuh bantuan, mention aku atau hubungi ownerku <@${process.env.OWNER_ID}>!\n\n` +
-            `Selamat bersenang-senang! 🚀`
+            `Jika butuh bantuan, mention aku atau hubungi ownerku \`kenndeclouv\`!\n\n` +
+            `-# © all rights reserved`
         )
         .setThumbnail(guild.client.user.displayAvatarURL())
         .setFooter({

@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { embedFooter } = require('../../helpers');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -31,13 +32,13 @@ module.exports = {
 
         const embed = new EmbedBuilder()
             .setTitle('> 🎯 Tebak Angka yokk!')
-            .setDescription(`Aku lagi mikirin angka antara **1 - ${maxNumber}** nihh 😋\nKetik angkanya di chat yaa!`)
+            .setDescription(`Aku lagi mikirin angka antara **1 - ${maxNumber}** nihh 😋\nKetik angkanya di chat yaa!\n\n-# Ketik angkamu langsung di chat yakk! 😋`)
             .addFields(
                 { name: 'Mode', value: `${mode.toUpperCase()}`, inline: true },
                 { name: 'Time Left', value: `<t:${endTime}:R>`, inline: true }
             )
             .setColor('Blue')
-            .setFooter({ text: 'ketik angkamu langsung di chat yakk! 😋' })
+            .setFooter(embedFooter(interaction))
             .setTimestamp();
 
         const gameMessage = await interaction.reply({ embeds: [embed], fetchReply: true });

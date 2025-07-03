@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { checkPermission } = require("../../helpers");
+const { checkPermission, embedFooter } = require("../../helpers");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("ban")
@@ -43,10 +43,7 @@ module.exports = {
         .setDescription(`🚫 | **${user.tag}** telah diban dari server.\n**Alasan:** ${reason}`)
         .setThumbnail(interaction.client.user.displayAvatarURL())
         .setTimestamp()
-        .setFooter({
-          text: `Sistem`,
-          iconURL: interaction.client.user.displayAvatarURL(),
-        });
+        .setFooter(embedFooter(interaction));
       return interaction.editReply({ embeds: [embed] });
     } else {
       return interaction.editReply({ content: "User tidak ada di server ini!" });

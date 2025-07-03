@@ -16,7 +16,7 @@
  * - Composite key support
  */
 
-const { Model } = require("sequelize");
+const { Model, Op } = require("sequelize");
 const { DatabaseError, CacheError } = require("./errors");
 const jsonStringify = require("json-stable-stringify");
 
@@ -46,28 +46,6 @@ class CacheableModel extends Model {
   /**
    * Normalisasi where clause untuk serialisasi konsisten
    */
-  // static normalizeWhereClause(where) {
-  //   const normalizeValue = (value) => {
-  //     if (value instanceof Date) return value.toISOString();
-  //     if (Array.isArray(value)) return value.map(normalizeValue);
-  //     if (value && typeof value === "object") {
-  //       return Object.keys(value)
-  //         .sort()
-  //         .reduce((acc, key) => {
-  //           acc[key] = normalizeValue(value[key]);
-  //           return acc;
-  //         }, {});
-  //     }
-  //     return value;
-  //   };
-
-  //   return Object.keys(where)
-  //     .sort()
-  //     .reduce((acc, key) => {
-  //       acc[key] = normalizeValue(where[key]);
-  //       return acc;
-  //     }, {});
-  // }
   static normalizeWhereClause(where) {
     const processValue = (value) => {
       if (value && typeof value === "object" && value[Op]) {
@@ -89,50 +67,6 @@ class CacheableModel extends Model {
   /**
    * Improved getAllCache dengan auto-invalidation
    */
-  // static async getAllCache(whereCondition = {}, options = {}) {
-  //   const cacheKey = this.getCacheKey({
-  //     queryType: "findAll",
-  //     where: whereCondition,
-  //     options,
-  //   });
-
-  //   // Cek cache
-  //   const cached = this.getCachedEntry(cacheKey);
-  //   if (cached) return cached;
-
-  //   // Query database
-  //   const records = await this.findAll({
-  //     where: whereCondition,
-  //     ...options,
-  //   });
-
-  //   // Cache individual records dan tracking query
-  //   const recordKeys = [];
-  //   for (const record of records) {
-  //     const individualKey = {
-  //       [this.primaryKeyAttribute]: record[this.primaryKeyAttribute],
-  //     };
-  //     const individualCacheKey = this.getCacheKey(individualKey);
-
-  //     // Update cache individual
-  //     this.cache.set(individualCacheKey, {
-  //       data: record,
-  //       expires: Date.now() + this.DEFAULT_TTL,
-  //       queries: [...(this.cache.get(individualCacheKey)?.queries || []), cacheKey],
-  //     });
-
-  //     recordKeys.push(individualCacheKey);
-  //   }
-
-  //   // Cache hasil query
-  //   this.cache.set(cacheKey, {
-  //     data: records,
-  //     expires: Date.now() + this.DEFAULT_TTL,
-  //     dependencies: recordKeys,
-  //   });
-
-  //   return records;
-  // }
   static async getAllCache(whereCondition = {}, options = {}) {
     const cacheKey = jsonStringify({
       queryType: "findAll",
@@ -310,60 +244,6 @@ class CacheableModel extends Model {
    *   age: { [Op.gt]: 18 }
    * });
    */
-  // static async getAllCache(whereCondition = {}) {
-  //   const cacheKey = this.getCacheKey(whereCondition);
-
-  //   // Cek cache hasil query
-  //   const cached = this.getCachedEntry(cacheKey);
-  //   if (cached) return cached;
-
-  //   // Query database
-  //   const records = await this.findAll({ where: whereCondition });
-
-  //   // Cache individual records
-  //   for (const record of records) {
-  //     const individualKey = { [this.primaryKeyAttribute]: record[this.primaryKeyAttribute] };
-  //     const individualCacheKey = this.getCacheKey(individualKey);
-  //     this.cache.set(individualCacheKey, {
-  //       data: record,
-  //       expires: Date.now() + this.DEFAULT_TTL,
-  //     });
-  //   }
-
-  //   // Cache hasil query
-  //   this.cache.set(cacheKey, {
-  //     data: records,
-  //     expires: Date.now() + this.DEFAULT_TTL,
-  //   });
-
-  //   return records;
-  // }
-
-  /**
-   * Update record dan cache
-   */
-  // static async updateCache(keyField, keyValue, newData) {
-  //   const cacheKey = this.getCacheKey({ [keyField]: keyValue });
-
-  //   try {
-  //     const [affectedCount] = await this.update(newData, {
-  //       where: { [keyField]: keyValue },
-  //     });
-
-  //     if (affectedCount > 0) {
-  //       const updatedRecord = await this.findOne({ where: { [keyField]: keyValue } });
-  //       this.cache.set(cacheKey, {
-  //         data: updatedRecord,
-  //         expires: Date.now() + this.DEFAULT_TTL,
-  //       });
-  //       return updatedRecord;
-  //     }
-  //     return null;
-  //   } catch (err) {
-  //     this.cache.delete(cacheKey);
-  //     throw new DatabaseError("Update failed", { cause: err });
-  //   }
-  // }
   static async updateCache(keyField, keyValue, newData) {
     const individualKey = { [keyField]: keyValue };
     const individualCacheKey = this.getCacheKey(individualKey);
@@ -395,22 +275,7 @@ class CacheableModel extends Model {
   /**
    * Simpan instance dan update cache
    */
-  // async saveAndUpdateCache(keyField = this.constructor.primaryKeyAttribute) {
-  //   try {
-  //     const savedInstance = await this.save();
-  //     const cacheKey = this.constructor.getCacheKey({ [keyField]: this[keyField] });
 
-  //     this.constructor.cache.set(cacheKey, {
-  //       data: savedInstance,
-  //       expires: Date.now() + this.constructor.DEFAULT_TTL,
-  //     });
-
-  //     return savedInstance;
-  //   } catch (err) {
-  //     this.constructor.clearCache({ [keyField]: this[keyField] });
-  //     throw new DatabaseError("Save failed", { cause: err });
-  //   }
-  // }
   async saveAndUpdateCache(keyField = this.constructor.primaryKeyAttribute) {
     const instance = await this.save();
     const cacheKey = this.constructor.getCacheKey({

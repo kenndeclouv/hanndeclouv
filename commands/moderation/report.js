@@ -1,5 +1,6 @@
 require("dotenv").config();
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { embedFooter } = require("../../helpers");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("report")
@@ -23,11 +24,11 @@ module.exports = {
 
     const embed = new EmbedBuilder()
       .setColor("Red")
-      .setTitle("> Report")
-      .setDescription(`**${user.tag}** telah dilaporkan oleh **${interaction.user.tag}** dengan alasan: ${reason}`)
+      // .setTitle("> Report")
+      .setDescription(`## 📢 Report\n**${user.tag}** telah dilaporkan oleh **${interaction.user.tag}** dengan alasan: ${reason}`)
       .setThumbnail(interaction.client.user.displayAvatarURL())
       .setTimestamp()
-      .setFooter({ text: `Dilaporkan oleh ${interaction.user.tag}`, iconURL: interaction.user.displayAvatarURL() });
+      .setFooter(embedFooter(interaction));
     await reportChannel.send({ embeds: [embed] });
     return interaction.editReply(`✅ | Telah melaporkan **${user.tag}**. Terima kasih telah melaporkan.`);
   },

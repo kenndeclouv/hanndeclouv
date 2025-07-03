@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { checkPermission } = require("../../helpers");
+const { checkPermission, embedFooter } = require("../../helpers");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("pin")
@@ -32,11 +32,11 @@ module.exports = {
     await message.pin();
     const embed = new EmbedBuilder()
       .setColor("Green")
-      .setTitle("> Pin")
-      .setDescription(`**${message.content}** telah dipin dari channel ini.`)
+      // .setTitle("> Pin")
+      .setDescription(`## 📌 Pin\n**${message.content}** telah dipin dari channel ini.`)
       .setThumbnail(interaction.client.user.displayAvatarURL())
       .setTimestamp()
-      .setFooter({ text: `Dipin oleh ${interaction.user.tag}`, iconURL: interaction.user.displayAvatarURL() });
+      .setFooter(embedFooter(interaction));
     return interaction.editReply({ embeds: [embed] });
   },
 };

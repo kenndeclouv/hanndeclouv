@@ -1,9 +1,10 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } = require("discord.js");
-const User = require("../../database/models/User");
 const Inventory = require("../../database/models/Inventory");
+const User = require("../../database/models/User");
+const { embedFooter } = require("../../helpers");
 
 module.exports = {
-  data: new SlashCommandBuilder().setName("shop").setDescription("Lihat dan beli item dari toko."),
+  data: new SlashCommandBuilder().setName("vshop").setDescription("Lihat dan beli item dari toko."),
   async execute(interaction) {
     if (!interaction.guild) {
       return interaction.reply({
@@ -13,7 +14,7 @@ module.exports = {
     }
     await interaction.deferReply();
     try {
-      const user = await User.getCache({ userId: interaction.user.id });
+      const user = await User.getCache({ userId: interaction.user.id, guildId: interaction.guild.id });
       if (!user) {
         return interaction.editReply({ content: "kamu belum memiliki akun gunakan `/account create` untuk membuat akun." });
       }
@@ -26,15 +27,31 @@ module.exports = {
         { name: "🖥️ Desktop", price: 2000, description: "Desktop untuk meningkatkan kemungkinan berhasil hack." },
       ];
 
+      // Beautiful new UI for the shop
       const embed = new EmbedBuilder()
-        .setColor("Blue")
-        .setTitle("> Toko")
-        .setDescription("Selamat datang di toko! Pilih item yang ingin kamu beli:")
+        .setColor("#00B2FF")
+        // .setTitle("🛒・Virtual Shop")
+        .setDescription([
+          `## 🛒・Virtual Shop\nSelamat datang di **Toko Virtual**!`,
+          `Pilih item di bawah untuk dibeli dan tingkatkan pengalamanmu!`,
+          "",
+          `**Kamu punya:** 💵 \`${user.cash}\` uang`
+        ].join("\n"))
+        .setThumbnail(interaction.client.user.displayAvatarURL())
+        .setImage("https://i.ibb.co/6bQ7QwK/shop-banner.png")
         .setTimestamp()
-        .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+        .setFooter(embedFooter(interaction));
 
-      items.forEach((item) => {
-        embed.addFields({ name: `${item.name}`, value: `Harga: **${item.price}** uang\n${item.description}`, inline: true });
+      items.forEach((item, idx) => {
+        embed.addFields({
+          name: `${item.name}  |  💵 ${item.price} uang`,
+          value: [
+            `> ${item.description}`,
+            // `> **ID:** \`${item.name.toLowerCase().replace(/[^a-z0-9]/g, "_")}\``,
+            idx < items.length - 1 ? "‎" : "" // invisible char for spacing
+          ].join("\n"),
+          inline: false
+        });
       });
 
       const row = new ActionRowBuilder().addComponents(
@@ -89,7 +106,8 @@ module.exports = {
             await btn.deferUpdate();
             if (btn.customId === "confirm_purchase") {
               user.cash -= selectedItem.price;
-              await user.save();
+              user.changed("cash", true);
+              await user.saveAndUpdateCache("userId");
 
               await Inventory.create({
                 guildId: user.guildId,

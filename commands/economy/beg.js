@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { checkCooldown, embedFooter } = require("../../helpers");
 const User = require("../../database/models/User");
 require("dotenv").config();
-const { checkCooldown } = require("../../helpers");
 
 module.exports = {
   data: new SlashCommandBuilder().setName("beg").setDescription("Minta uang dari pengguna lain."),
@@ -14,9 +14,7 @@ module.exports = {
     }
     await interaction.deferReply();
     try {
-      let user = await User.findOne({
-        where: { userId: interaction.user.id },
-      });
+      let user = await User.getCache({ userId: interaction.user.id, guildId: interaction.guild.id });
       if (!user) {
         return interaction.reply({ content: "kamu belum memiliki akun gunakan `/account create` untuk membuat akun." });
       }
@@ -31,7 +29,9 @@ module.exports = {
       const randomCash = Math.floor(Math.random() * 41) + 10;
       user.cash += randomCash;
       user.lastBeg = Date.now();
-      await user.save();
+      user.changed("cash", true);
+      user.changed("lastBeg", true);
+      await user.saveAndUpdateCache("userId");
 
       const embed = new EmbedBuilder()
         .setColor("Yellow")
@@ -39,7 +39,7 @@ module.exports = {
         .setThumbnail(interaction.user.displayAvatarURL())
         .setDescription(`kamu meminta dan menerima **${randomCash} uang**!`)
         .setTimestamp()
-        .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+        .setFooter(embedFooter(interaction));
       return interaction.editReply({ embeds: [embed] });
     } catch (error) {
       console.error("Error during beg command execution:", error);

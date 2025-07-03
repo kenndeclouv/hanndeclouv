@@ -2,7 +2,7 @@ const { SlashCommandBuilder, EmbedBuilder, ChannelType, WebhookClient } = requir
 const User = require("../../database/models/User");
 const Clan = require("../../database/models/Clan"); // Import model Clan
 const BotSetting = require("../../database/models/BotSetting"); // Import model Clan
-const { parseDuration, addXp, checkPermission } = require("../../helpers");
+const { parseDuration, addXp, checkPermission, embedFooter } = require("../../helpers");
 require("dotenv").config();
 module.exports = {
   data: new SlashCommandBuilder()
@@ -100,14 +100,14 @@ module.exports = {
             : null;
 
           // Cek apakah clan dengan nama ini sudah ada
-          const existingClan = await Clan.findOne({ where: { name, guildId } });
+          const existingClan = await Clan.getCache({ name: name, guildId: guildId });
           if (existingClan) {
             return interaction.editReply("❌ Clan dengan nama itu sudah ada!");
           }
 
           // Cek apakah user sudah punya role clan lain
           const member = await interaction.guild.members.fetch(owner.id);
-          const allClans = await Clan.findAll({ where: { guildId } });
+          const allClans = await Clan.getAllCache({ guildId: guildId });
           const clanRoleIds = allClans.map((s) => s.roleId);
           const userClanRoles = member.roles.cache.filter((r) => clanRoleIds.includes(r.id));
           if (userClanRoles.size > 0) {
@@ -190,6 +190,7 @@ module.exports = {
               memberId: JSON.stringify([owner.id]),
             });
 
+            clan.saveAndUpdateCache("guildId");
             // Berikan role ke owner
             const member = interaction.guild.members.cache.get(owner.id);
             if (member) {
@@ -230,7 +231,7 @@ module.exports = {
                   reason: `Thread clan baru dibuat oleh ${interaction.user.tag}`,
                 });
                 clan.threadId = clanThread.id;
-                await clan.save();
+                await clan.saveAndUpdateCache("guildId");
               }
             } catch (err) {
               console.error("Gagal membuat post forum clan:", err);
@@ -271,9 +272,9 @@ module.exports = {
                 .addFields({ name: "Owner", value: `<@${owner.id}>`, inline: true }, { name: "Role", value: `<@&${role.id}>`, inline: true })
                 .setDescription((rules ? `**Aturan clan:**\n${rules}\n` : "") + `\nAyo mulai diskusi dan koordinasi bersama clanmu di sini!`)
                 .setTimestamp()
-                .setFooter({ text: "Clan System", iconURL: interaction.client.user.displayAvatarURL() });
+                .setFooter(embedFooter(interaction));
               clan.channelId = clanChannel.id;
-              await clan.save();
+              await clan.saveAndUpdateCache("guildId");
               await clanChannel.send({ embeds: [clanWelcomeEmbed] });
             } catch (err) {
               console.error("Gagal membuat channel clan:", err);
@@ -304,7 +305,7 @@ module.exports = {
                 reason: `Voice channel clan baru untuk ${name}`,
               });
               clan.voiceId = clanVoice.id;
-              await clan.save();
+              await clan.saveAndUpdateCache("guildId");
             } catch (err) {
               console.error("Gagal membuat voice channel clan:", err);
               // Tidak perlu gagal total, hanya log error
@@ -323,7 +324,7 @@ module.exports = {
           const member = await interaction.guild.members.fetch(interaction.user.id);
 
           // Cari clan di database
-          const clan = await Clan.findOne({ where: { name: clanName, guildId: guildId } });
+          const clan = await Clan.getCache({ name: clanName, guildId: guildId });
           if (!clan) {
             await interaction.editReply("❌ Clan tidak ditemukan!");
             return;
@@ -363,7 +364,7 @@ module.exports = {
           if (!memberIds.includes(member.id)) {
             memberIds.push(member.id);
             clan.memberId = JSON.stringify(memberIds);
-            await clan.save();
+            await clan.saveAndUpdateCache("guildId");
           }
 
           // Kirim embed ke channelId dan ownerId
@@ -405,7 +406,7 @@ module.exports = {
           const member = await interaction.guild.members.fetch(interaction.user.id);
 
           // Ambil semua clan dan roleId-nya
-          const clans = await Clan.findAll();
+          const clans = await Clan.getAllCache({ guildId: guildId });
           const clanRoleIds = clans.map((clan) => clan.roleId);
 
           // Temukan role clan yang dimiliki user
@@ -439,7 +440,7 @@ module.exports = {
               if (memberIds.includes(member.id)) {
                 memberIds = memberIds.filter((id) => id !== member.id);
                 clan.memberId = JSON.stringify(memberIds);
-                await clan.save();
+                await clan.saveAndUpdateCache("guildId");
               }
             }
           }
@@ -504,7 +505,7 @@ module.exports = {
           const endTimestamp = Math.floor(endTime / 1000);
 
           // Ambil semua clan dari database
-          const clans = await Clan.findAll({ where: { isVerified: true } });
+          const clans = await Clan.getAllCache({ guildId: guildId, isVerified: true });
           if (clans.length < 2) {
             return interaction.editReply("❌ Minimal harus ada 2 clan yang telah diverifikasi untuk perang!");
           }
@@ -621,7 +622,7 @@ module.exports = {
                       `Kamu mendapatkan reward **${rewardAmount} ${rewardType === "money" ? "uang" : "XP"}** karena clan **${winner.emoji} ${winner.name}** menang!\n\nTerima kasih telah berpartisipasi!`
                     )
                     .setTimestamp()
-                    .setFooter({ text: "Clan War", iconURL: interaction.client.user.displayAvatarURL() });
+                    .setFooter(embedFooter(interaction));
                   const userObj = await interaction.client.users.fetch(member.id);
                   await userObj.send({ embeds: [dmEmbed] }).catch(() => { });
                 } catch (dmErr) {
@@ -635,7 +636,7 @@ module.exports = {
 
         case "list": {
           const guildId = interaction.guild.id;
-          const clans = await Clan.findAll({ where: { guildId } });
+          const clans = await Clan.getAllCache({ guildId: guildId });
 
           if (!clans || clans.length === 0) {
             return await interaction.editReply("❌ Tidak ada clan yang terdaftar di server ini.");
@@ -670,7 +671,7 @@ module.exports = {
           const guildId = interaction.guild.id;
 
           // Cari clan berdasarkan nama dan guild
-          const clan = await Clan.findOne({ where: { name, guildId } });
+          const clan = await Clan.getCache({ name: name, guildId: guildId });
           if (!clan) {
             return await interaction.editReply("❌ Clan tidak ditemukan.");
           }
@@ -749,7 +750,7 @@ module.exports = {
           }
 
           const clanName = interaction.options.getString("clan");
-          const clan = await Clan.findOne({ where: { name: clanName, guildId } });
+          const clan = await Clan.getCache({ name: clanName, guildId: guildId });
 
           if (!clan) {
             return interaction.editReply("❌ Clan tidak ditemukan.");
@@ -760,7 +761,7 @@ module.exports = {
           }
 
           clan.isVerified = true;
-          await clan.save();
+          await clan.saveAndUpdateCache("guildId");
 
           // Optionally, send a message to the clan owner
           try {
@@ -830,7 +831,7 @@ module.exports = {
           const newOwner = interaction.options.getMentionable("owner");
 
           // Cari clan di database
-          const clan = await Clan.findOne({ where: { name: clanName, guildId: guildId } });
+          const clan = await Clan.getCache({ name: clanName, guildId: guildId });
           if (!clan) {
             await interaction.editReply("❌ Clan tidak ditemukan!");
             return;
@@ -857,7 +858,7 @@ module.exports = {
 
           // Update owner di database
           clan.ownerId = newOwner.id;
-          await clan.save();
+          await clan.saveAndUpdateCache("guildId");
 
           // Update permission channel clan jika ada
           if (clan.channelId) {
@@ -922,7 +923,7 @@ module.exports = {
       // Send DM to owner about the error
       const webhookClient = new WebhookClient({ url: process.env.WEBHOOK_ERROR_LOGS });
 
-      const errorEmbed = new EmbedBuilder().setColor("Red").setTitle(`> ❌ Error command /clan`).setDescription(`\`\`\`${error}\`\`\``).setFooter(`Error dari server ${interaction.guild.name}`).setTimestamp();
+      const errorEmbed = new EmbedBuilder().setColor("Red").setTitle(`> ❌ Error command /clan`).setDescription(`\`\`\`${error}\`\`\``).setFooter({ text: `Error dari server ${interaction.guild.name}` }).setTimestamp();
 
       // Kirim ke webhook
       webhookClient

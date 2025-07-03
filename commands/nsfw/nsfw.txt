@@ -1,7 +1,16 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, WebhookClient } = require("discord.js");
 const axios = require("axios");
 const User = require("../../database/models/User");
+const { checkIsPremium } = require("../../helpers");
+
 require("dotenv").config();
+
+const ALLOWED_CATEGORIES = [
+    "hass", "hmidriff", "pgif", "4k", "hentai", "holo", "hneko", "neko", "hkitsune", "kemonomimi",
+    "anal", "hanal", "gonewild", "kanna", "ass", "pussy", "thigh", "hthigh", "coffee", "food",
+    "paizuri", "tentacle", "boobs", "hboobs", "yaoi"
+];
+
 module.exports = {
     data: new SlashCommandBuilder()
         .setName("nsfw")
@@ -41,26 +50,51 @@ module.exports = {
         ),
 
     async execute(interaction) {
+        const isPremium = await checkIsPremium(interaction.user.id);
+        if (!isPremium) {
+            const premiumEmbed = new EmbedBuilder()
+                .setColor("Yellow")
+                .setDescription("## Fitur Premium\nFitur ini cuma buat **premium** user yaa.\nHubungi owner buat langganan!")
+                .setFooter({ text: "Upgrade ke premium untuk akses fitur ini.", iconURL: interaction.client.user.displayAvatarURL() });
+
+            const row = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setLabel("Upgrade Premium")
+                    .setStyle(ButtonStyle.Link)
+                    .setURL("https://kythia.my.id/premium") // Ganti URL sesuai kebutuhan
+            );
+
+            return interaction.editReply({
+                embeds: [premiumEmbed],
+                components: [row]
+            });
+        }
+
         await interaction.deferReply({ ephemeral: true });
 
         try {
-            // Ambil user dari database (pakai findOne supaya bisa update nsfwCount)
-            let user = await User.findOne({ where: { userId: interaction.user.id } });
-            if (!user) {
-                user = await User.create({ userId: interaction.user.id });
-            }
+            let user;
 
-            const channel = interaction.channel;
-            const isDM = !channel || channel.type === ChannelType.DM;
+            if (interaction.guild) {
+                const guildId = interaction.guild.id;
+                const userId = interaction.user.id;
 
-            if (!isDM && !channel.nsfw) {
-                return interaction.reply({
-                    content: "command ini hanya bisa dipakai di channel nsfw 😭",
-                    ephemeral: true,
-                });
+                user = await User.getCache({ userId, guildId });
+
+                if (!user) {
+                    user = await User.upsert({ userId, guildId });
+                }
             }
 
             const category = interaction.options.getString("category");
+
+            // Validate the category
+            if (!ALLOWED_CATEGORIES.includes(category)) {
+                return interaction.editReply({
+                    content: "❌ | Kategori tidak valid. Silakan pilih kategori yang tersedia dari menu.",
+                    ephemeral: true
+                });
+            }
 
             const fetchContent = async () => {
                 const url = `https://nekobot.xyz/api/image?type=${category}`;
@@ -76,9 +110,11 @@ module.exports = {
 
             const sendContent = async () => {
                 // Tambahkan 1 ke nsfwCount setiap kali request
-                user.nsfwCount = (user.nsfwCount || 0) + 1;
-                await user.save();
-
+                if (interaction.guild) {
+                    user.nsfwCount = (user.nsfwCount || 0) + 1;
+                    user.changed("nsfwCount", true);
+                    await user.saveAndUpdateCache("userId");
+                }
                 const img = await fetchContent();
 
                 const embed = new EmbedBuilder()
@@ -118,7 +154,7 @@ module.exports = {
             // Send DM to owner about the error
             const webhookClient = new WebhookClient({ url: process.env.WEBHOOK_ERROR_LOGS });
 
-            const errorEmbed = new EmbedBuilder().setColor("Red").setTitle(`> ❌ Error command /nsfw`).setDescription(`\`\`\`${error}\`\`\``).setFooter(`Error dari server ${interaction.guild.name}`).setTimestamp();
+            const errorEmbed = new EmbedBuilder().setColor("Red").setTitle(`> ❌ Error command /nsfw`).setDescription(`\`\`\`${error}\`\`\``).setFooter({ text: `Error dari server ${interaction.guild.name}` }).setTimestamp();
 
             // Kirim ke webhook
             webhookClient

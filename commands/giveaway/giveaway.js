@@ -81,7 +81,7 @@ module.exports = {
         .setColor("Red")
         .setTitle(`> ❌ Error command /giveaway`)
         .setDescription(`\`\`\`${error}\`\`\``)
-        .setFooter(`Error dari server ${interaction.guild.name}`)
+        .setFooter({ text: `Error dari server ${interaction.guild.name}` })
         .setTimestamp();
 
       // Kirim ke webhook
@@ -116,14 +116,14 @@ async function startGiveaway(interaction) {
 
   // Membuat embed giveaway
   const embed = new EmbedBuilder()
-    .setTitle("> Giveaway! 🎉")
-    .setDescription(`${role ? `<@&${role.id}>` : "@everyone"}\n\nHadiah: \`${prize}\`\nPemenang: \`${winners}\`\nBerakhir: <t:${endTimestamp}:R>\n\nReact 🎉 untuk ikut!`)
+    // .setTitle("> Giveaway! 🎉")
+    .setDescription(`## 🎉 Giveaway!\n${role ? `<@&${role.id}>` : "@everyone"}\n\nHadiah: \`${prize}\`\nPemenang: \`${winners}\`\nBerakhir: <t:${endTimestamp}:R>\n\nReact 🎉 untuk ikut!`)
     .setColor(color)
     .setThumbnail(interaction.client.user.displayAvatarURL())
     .setImage("https://i.ibb.co/Y0C1Zcw/tenor.gif")
     .setFooter({ text: `Berakhir: ${new Date(endTime).toLocaleString()}` });
 
-  const message = await interaction.channel.send({ embeds: [embed] });
+  const message = await interaction.channel.send({ content: role ? `<@&${role.id}>` : "@everyone", embeds: [embed] });
   await message.react("🎉");
 
   // Menyimpan data giveaway ke database
@@ -193,7 +193,7 @@ async function startGiveaway(interaction) {
       }
     } catch (error) {
       console.error("Error handling reaction:", error);
-      reaction.users.remove(user.id).catch(() => {});
+      reaction.users.remove(user.id).catch(() => { });
     }
   });
 
@@ -224,7 +224,7 @@ async function startGiveaway(interaction) {
       await endGiveawayById(message.id, interaction.guild, interaction);
     } catch (error) {
       console.error("Error ending giveaway:", error);
-      interaction.channel.send(`Gagal mengakhiri giveaway ${message.url}`).catch(() => {});
+      interaction.channel.send(`Gagal mengakhiri giveaway ${message.url}`).catch(() => { });
     }
   });
 
@@ -234,7 +234,7 @@ async function startGiveaway(interaction) {
 // Fungsi untuk mengakhiri giveaway
 async function endGiveaway(interaction) {
   const messageId = interaction.options.getString("message_id");
-  const giveaway = await Giveaway.findOne({ where: { messageId } });
+  const giveaway = await Giveaway.getCache({ messageId: messageId });
 
   if (!giveaway || giveaway.ended) {
     return interaction.editReply("Giveaway tidak ditemukan atau sudah berakhir.");
@@ -247,7 +247,7 @@ async function endGiveaway(interaction) {
 // Fungsi untuk membatalkan giveaway
 async function cancelGiveaway(interaction) {
   const messageId = interaction.options.getString("message_id");
-  const giveaway = await Giveaway.findOne({ where: { messageId } });
+  const giveaway = await Giveaway.getCache({ messageId: messageId });
 
   if (!giveaway) {
     return interaction.editReply("Giveaway tidak ditemukan.");
@@ -258,8 +258,8 @@ async function cancelGiveaway(interaction) {
 
   const embed = new EmbedBuilder()
     .setColor("Red")
-    .setTitle("> ❌ Giveaway Dibatalkan!")
-    .setDescription(`@everyone\nGiveaway ini telah dibatalkan oleh <@${interaction.user.id}>`)
+    // .setTitle(">  Giveaway Dibatalkan!")
+    .setDescription(`## ❌ Giveaway Dibatalkan!\nGiveaway ini telah dibatalkan oleh <@${interaction.user.id}>`)
     .setThumbnail(interaction.client.user.displayAvatarURL())
     .setTimestamp();
 
@@ -331,7 +331,7 @@ async function cancelGiveaway(interaction) {
 // }
 async function rerollGiveaway(interaction) {
   const messageId = interaction.options.getString("message_id");
-  const giveaway = await Giveaway.findOne({ where: { messageId } });
+  const giveaway = await Giveaway.getCache({ messageId: messageId });
 
   if (!giveaway) {
     return interaction.editReply("Giveaway tidak ditemukan.");
@@ -377,8 +377,8 @@ async function rerollGiveaway(interaction) {
   );
 
   const updatedEmbed = new EmbedBuilder()
-    .setTitle("> 🎉 Giveaway Berakhir (Reroll)!")
-    .setDescription(`@everyone\nHadiah: \`${giveaway.prize}\`\nPemenang Baru: ${winnerUsernames.join(", ")}`)
+    // .setTitle("> 🎉 Giveaway Berakhir (Reroll)!")
+    .setDescription(`## 🎉 Giveaway Berakhir (Reroll)!\nHadiah: \`${giveaway.prize}\`\nPemenang Baru: ${winnerUsernames.join(", ")}`)
     .setColor("Green")
     .setThumbnail(interaction.guild.iconURL({ dynamic: true }))
     .setImage("https://i.ibb.co/Y0C1Zcw/tenor.gif")
@@ -392,7 +392,7 @@ async function rerollGiveaway(interaction) {
 }
 
 async function endGiveawayById(messageId, guild, interaction) {
-  const giveaway = await Giveaway.findOne({ where: { messageId } });
+  const giveaway = await Giveaway.getCache({ messageId: messageId });
   if (!giveaway || giveaway.ended) return;
 
   const channel = await guild.channels.fetch(giveaway.channelId);
@@ -411,8 +411,8 @@ async function endGiveawayById(messageId, guild, interaction) {
   if (participants.length === 0) {
     // kalau gak ada peserta
     updatedEmbed = new EmbedBuilder()
-      .setTitle("> 🎉 Giveaway Berakhir!")
-      .setDescription("Tidak ada peserta yang mengikuti giveaway.")
+      // .setTitle("> 🎉 Giveaway Berakhir!")
+      .setDescription("## 🎉 Giveaway Berakhir!\nTidak ada peserta yang mengikuti giveaway.")
       .setColor("Red")
       .setThumbnail(guild.iconURL({ dynamic: true }))
       .setImage("https://i.ibb.co/Y0C1Zcw/tenor.gif")
@@ -446,15 +446,16 @@ async function endGiveawayById(messageId, guild, interaction) {
       for (const winnerId of winners) {
         try {
           const winner = await guild.members.fetch(winnerId);
-          let user = await User.findOne({ where: { userId: winner.id } });
+          let user = await User.getCache({ userId: winner.id, guildId: guild.id });
           if (user) {
             user.cash += money;
-            await user.save();
+            user.changed("cash", true);
+            await user.saveAndUpdateCache("userId");
           }
 
           const embed = new EmbedBuilder()
-            .setTitle("> 🎉 Kamu Menang Giveaway!")
-            .setDescription(`Kamu mendapatkan ${money} cash dari giveaway!`)
+            // .setTitle("> 🎉 Kamu Menang Giveaway!")
+            .setDescription(`## 🎉 Kamu Menang Giveaway!\nKamu mendapatkan ${money} cash dari giveaway!`)
             .setColor("Green")
             .setThumbnail(guild.iconURL({ dynamic: true }))
             .setImage("https://i.ibb.co/Y0C1Zcw/tenor.gif")
@@ -469,8 +470,8 @@ async function endGiveawayById(messageId, guild, interaction) {
     }
 
     updatedEmbed = new EmbedBuilder()
-      .setTitle("> 🎉 Giveaway Berakhir!")
-      .setDescription(`Hadiah: \`${giveaway.prize}\`\nPemenang: ${winnerUsernames.join(", ")}`)
+      // .setTitle("> 🎉 Giveaway Berakhir!")
+      .setDescription(`## 🎉 Giveaway Berakhir!\nHadiah: \`${giveaway.prize}\`\nPemenang: ${winnerUsernames.join(", ")}`)
       .setColor("Green")
       .setThumbnail(guild.iconURL({ dynamic: true }))
       .setImage("https://i.ibb.co/Y0C1Zcw/tenor.gif")
@@ -482,5 +483,6 @@ async function endGiveawayById(messageId, guild, interaction) {
   await message.edit({ embeds: [updatedEmbed] });
 
   giveaway.ended = true;
-  await giveaway.save();
+  giveaway.changed("ended", true);
+  await giveaway.saveAndUpdateCache("messageId");
 }

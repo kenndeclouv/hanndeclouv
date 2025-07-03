@@ -20,8 +20,8 @@ class BotSetting extends CacheableModel {
         modLogChannelId: { type: DataTypes.STRING },
 
         // SERVER STATS
-        memberCountChannelId: { type: DataTypes.STRING },
-        onlineCountChannelId: { type: DataTypes.STRING },
+        serverStats: { type: DataTypes.JSON, defaultValue: [] },
+        serverStatsCategoryId: { type: DataTypes.STRING, allowNull: true },
 
         // FEATURE ON/OFF
         antiInviteOn: { type: DataTypes.BOOLEAN, defaultValue: false },
@@ -46,6 +46,8 @@ class BotSetting extends CacheableModel {
         invitesOn: { type: DataTypes.BOOLEAN, defaultValue: false },
 
         rolePrefixOn: { type: DataTypes.BOOLEAN, defaultValue: false },
+
+        testimonyOn: { type: DataTypes.BOOLEAN, defaultValue: false },
 
         // LEVELING
         levelingChannelId: { type: DataTypes.STRING },
@@ -81,6 +83,21 @@ class BotSetting extends CacheableModel {
         minecraftPortChannelId: { type: DataTypes.STRING, allowNull: true },
         minecraftStatusChannelId: { type: DataTypes.STRING, allowNull: true },
         minecraftPlayersChannelId: { type: DataTypes.STRING, allowNull: true },
+
+        // AI
+        aiChannelIds: { type: DataTypes.JSON, defaultValue: [] },
+
+        // Testimony
+        testimonyChannelId: { type: DataTypes.STRING, allowNull: true },
+        feedbackChannelId: { type: DataTypes.STRING, allowNull: true },
+        testimonyCount: { type: DataTypes.BIGINT, defaultValue: 0 },
+        testimonyCountFormat: { type: DataTypes.STRING, allowNull: true }, // testimony-{count} || {count}-testi
+        testimonyCountChannelId: { type: DataTypes.STRING, allowNull: true, defaultValue: 0 },
+
+        // IMAGES URL
+        welcomeInImageUrl: { type: DataTypes.STRING, allowNull: true },
+        welcomeOutImageUrl: { type: DataTypes.STRING, allowNull: true },
+
       },
       {
         sequelize,

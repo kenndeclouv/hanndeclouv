@@ -1,7 +1,9 @@
+
 // const fs = require("fs");
 // const path = require("path");
+// const { ApplicationCommandOptionType } = require("discord.js");
 
-// const commandsDir = path.join(__dirname, "../commands");
+// const slashCommandsDir = path.join(__dirname, "../commands");
 // const docsDir = path.join(__dirname, "./");
 
 // const getAllCommandFiles = (dir, base = "") => {
@@ -20,136 +22,188 @@
 //   return results;
 // };
 
-// const buildFullPath = (options = [], prefix = []) => {
-//   const paths = [];
+// // Map Discord.js option types to human-readable names
+// const OPTION_TYPE_MAP = {
+//   [ApplicationCommandOptionType.Subcommand]: "Subcommand",
+//   [ApplicationCommandOptionType.SubcommandGroup]: "Subcommand Group",
+//   [ApplicationCommandOptionType.String]: "Text",
+//   [ApplicationCommandOptionType.Integer]: "Number",
+//   [ApplicationCommandOptionType.Boolean]: "True/False",
+//   [ApplicationCommandOptionType.User]: "User",
+//   [ApplicationCommandOptionType.Channel]: "Channel",
+//   [ApplicationCommandOptionType.Role]: "Role",
+//   [ApplicationCommandOptionType.Mentionable]: "Mentionable",
+//   [ApplicationCommandOptionType.Number]: "Decimal",
+//   [ApplicationCommandOptionType.Attachment]: "File",
+// };
 
-//   for (const opt of options) {
-//     const currentPath = [...prefix, opt.name];
+// // Build command structure recursively
+// const buildCommandStructure = (options = []) => {
+//   return options.map(option => {
+//     const base = {
+//       name: option.name,
+//       description: option.description,
+//       type: OPTION_TYPE_MAP[option.type] || "Unknown",
+//       required: option.required || false,
+//     };
 
-//     if (opt.options) {
-//       const nestedPaths = buildFullPath(opt.options, currentPath);
-//       paths.push(...nestedPaths);
+//     if (option.choices?.length) {
+//       base.choices = option.choices.map(c => ({ name: c.name, value: c.value }));
+//     }
+
+//     if (option.options?.length) {
+//       base.options = buildCommandStructure(option.options);
+//     }
+
+//     return base;
+//   });
+// };
+
+// // Generate accurate usage examples
+// const generateUsageExamples = (commandName, structure) => {
+//   const examples = [];
+
+//   const buildExample = (parts, current) => {
+//     const namePart = current.name;
+//     const valuePlaceholder = current.choices?.length
+//       ? current.choices[0].value
+//       : current.type === "Boolean"
+//         ? "true"
+//         : current.type === "File"
+//           ? "file.json"
+//           : `[${current.name}]`;
+
+//     parts.push(`${namePart}:${valuePlaceholder}`);
+
+//     if (current.options) {
+//       current.options.forEach(sub => buildExample([...parts], sub));
 //     } else {
-//       paths.push({
-//         path: currentPath,
-//         option: opt
+//       examples.push(`/${commandName} ${parts.join(" ")}`);
+//     }
+//   };
+
+//   structure.forEach(option => {
+//     if (option.type === "Subcommand") {
+//       const parts = [option.name];
+
+//       if (option.options) {
+//         option.options.forEach(opt => {
+//           buildExample([...parts], opt);
+//         });
+//       } else {
+//         examples.push(`/${commandName} ${option.name}`);
+//       }
+//     } else if (option.type === "Subcommand Group") {
+//       option.options.forEach(subCmd => {
+//         const groupParts = [option.name, subCmd.name];
+
+//         if (subCmd.options) {
+//           subCmd.options.forEach(opt => {
+//             buildExample([...groupParts], opt);
+//           });
+//         } else {
+//           examples.push(`/${commandName} ${groupParts.join(" ")}`);
+//         }
 //       });
 //     }
-//   }
-
-//   return paths;
-// };
-
-// const buildCommandUsage = (commandName, pathParts, options = []) => {
-//   let usage = `/${commandName}`;
-
-//   // Tambahkan group/subcommand path
-//   for (const part of pathParts) {
-//     usage += ` ${part}`;
-//   }
-
-//   // Tambahkan options
-//   for (const opt of options) {
-//     usage += ` [${opt.name}]`;
-//   }
-
-//   return usage;
-// };
-
-// const buildMarkdown = (commandJson) => {
-//   let md = `### /${commandJson.name}\n\n`;
-//   md += `**Deskripsi:** ${commandJson.description || "-"}\n\n`;
-
-//   const allPaths = buildFullPath(commandJson.options || []);
-//   const usageMap = new Map();
-
-//   // Kelompokkan berdasarkan path unik
-//   const pathGroups = new Map();
-//   for (const { path, option } of allPaths) {
-//     const key = path.join(':');
-
-//     if (!pathGroups.has(key)) {
-//       pathGroups.set(key, {
-//         path,
-//         options: []
-//       });
-//     }
-
-//     pathGroups.get(key).options.push(option);
-//   }
-
-//   // Bangun usage untuk setiap path unik
-//   md += `### Usage:\n`;
-//   pathGroups.forEach((group) => {
-//     const usage = buildCommandUsage(commandJson.name, group.path, group.options);
-//     usageMap.set(usage, group.options);
-//     md += `\`${usage}\`\n`;
 //   });
 
-//   // Bangun opsi untuk setiap path unik
-//   if (allPaths.length > 0) {
-//     md += `\n### Options:\n`;
+//   return examples;
+// };
 
-//     pathGroups.forEach((group, key) => {
-//       const scope = group.path.length > 0
-//         ? ` (${group.path.join(' > ')})`
-//         : '';
+// // Build markdown documentation
+// const buildMarkdown = (commandJson) => {
+//   let md = `### /${commandJson.name}\n\n`;
+//   md += `**Description:** ${commandJson.description || "-"}\n\n`;
 
-//       md += `#### Untuk perintah${scope}:\n`;
+//   // Build command structure
+//   const structure = buildCommandStructure(commandJson.options || []);
 
-//       group.options.forEach((opt) => {
-//         md += `- \`${opt.name}\`${opt.required ? " (required)" : ""} — ${opt.description || "-"}\n`;
+//   // Generate accurate usage examples
+//   const examples = generateUsageExamples(commandJson.name, structure);
 
-//         if (opt.choices?.length > 0) {
-//           md += `  - Pilihan: ${opt.choices.map(c => `\`${c.value}\``).join(", ")}\n`;
+//   if (examples.length > 0) {
+//     md += `### Usage Examples:\n`;
+//     examples.forEach(example => {
+//       md += `- \`${example}\`\n`;
+//     });
+//     md += "\n";
+//   }
+
+//   // Build detailed command structure
+//   if (structure.length > 0) {
+//     md += `### Command Structure:\n`;
+
+//     const renderOptions = (options, depth = 0) => {
+//       let content = "";
+//       const indent = "  ".repeat(depth);
+
+//       options.forEach(opt => {
+//         content += `${indent}- **${opt.name}** (${opt.type})${opt.required ? " [Required]" : ""}\n`;
+//         content += `${indent}  - ${opt.description || "No description"}\n`;
+
+//         if (opt.choices?.length) {
+//           content += `${indent}  - Choices: ${opt.choices.map(c => `\`${c.value}\``).join(", ")}\n`;
 //         }
 
-//         // Bangun contoh penggunaan yang akurat
-//         const exampleValue = opt.choices?.[0]?.value || '[value]';
-//         const exampleUsage = buildCommandUsage(
-//           commandJson.name,
-//           group.path,
-//           [{ ...opt, name: `${opt.name}:${exampleValue}` }]
-//         );
-
-//         md += `  - **Contoh Penggunaan:** \`${exampleUsage}\`\n`;
+//         if (opt.options?.length) {
+//           content += `${indent}  - Sub-options:\n`;
+//           content += renderOptions(opt.options, depth + 2);
+//         }
 //       });
-//     });
+
+//       return content;
+//     };
+
+//     md += renderOptions(structure);
 //   }
 
 //   md += `\n---\n\n`;
 //   return md;
 // };
 
-// const allFiles = getAllCommandFiles(commandsDir);
+// // Main execution
+// const allFiles = getAllCommandFiles(slashCommandsDir);
 // const docsMap = {};
 
 // for (const { fullPath, relativePath } of allFiles) {
+//   delete require.cache[require.resolve(fullPath)];
 //   const command = require(fullPath);
-//   if (!command.data?.toJSON) continue;
 
-//   const json = command.data.toJSON();
-//   const parts = relativePath.split(path.sep);
-//   const folder = parts.length > 1 ? parts[0] : "root";
+//   if (!command.data?.toJSON) {
+//     console.log(`⏩ Skipping ${relativePath} - not a valid command`);
+//     continue;
+//   }
 
-//   if (!docsMap[folder]) docsMap[folder] = [];
-//   docsMap[folder].push(buildMarkdown(json));
+//   try {
+//     const json = command.data.toJSON();
+//     const parts = relativePath.split(path.sep);
+//     const folder = parts.length > 1 ? parts[0] : "root";
+
+//     if (!docsMap[folder]) docsMap[folder] = [];
+//     docsMap[folder].push(buildMarkdown(json));
+//     console.log(`✅ Processed ${relativePath}`);
+//   } catch (error) {
+//     console.error(`❌ Error processing ${relativePath}:`, error.message);
+//   }
 // }
 
+// // Ensure docs directory exists
 // fs.mkdirSync(docsDir, { recursive: true });
 
+// // Write documentation files
 // Object.entries(docsMap).forEach(([folder, entries]) => {
 //   const filePath = path.join(docsDir, `${folder}.md`);
-//   const header = `## 📁 Command: ${folder}\n\n`;
+//   const header = `## 📁 Command Category: ${folder}\n\n`;
 //   const fullContent = header + entries.join("\n");
 //   fs.writeFileSync(filePath, fullContent);
-//   console.log(`✅ ${filePath} dibuat!`);
+//   console.log(`📄 Documentation created: ${filePath}`);
 // });
-
 const fs = require("fs");
 const path = require("path");
+const { ApplicationCommandOptionType } = require("discord.js");
 
-const commandsDir = path.join(__dirname, "../commands");
+const slashCommandsDir = path.join(__dirname, "../commands");
 const docsDir = path.join(__dirname, "./");
 
 const getAllCommandFiles = (dir, base = "") => {
@@ -168,94 +222,142 @@ const getAllCommandFiles = (dir, base = "") => {
   return results;
 };
 
-const buildCommandPath = (options = [], prefix = []) => {
-  const paths = [];
-
-  for (const opt of options) {
-    const currentPath = [...prefix, opt.name];
-    
-    if (opt.options) {
-      const nestedPaths = buildCommandPath(opt.options, currentPath);
-      paths.push(...nestedPaths);
-    } else {
-      paths.push({
-        path: currentPath,
-        option: opt
-      });
-    }
-  }
-
-  return paths;
+// Map Discord.js option types to human-readable names
+const OPTION_TYPE_MAP = {
+  [ApplicationCommandOptionType.Subcommand]: "Subcommand",
+  [ApplicationCommandOptionType.SubcommandGroup]: "Subcommand Group",
+  [ApplicationCommandOptionType.String]: "Text",
+  [ApplicationCommandOptionType.Integer]: "Number",
+  [ApplicationCommandOptionType.Boolean]: "True/False",
+  [ApplicationCommandOptionType.User]: "User",
+  [ApplicationCommandOptionType.Channel]: "Channel",
+  [ApplicationCommandOptionType.Role]: "Role",
+  [ApplicationCommandOptionType.Mentionable]: "Mentionable",
+  [ApplicationCommandOptionType.Number]: "Decimal",
+  [ApplicationCommandOptionType.Attachment]: "File",
 };
 
-const buildCommandUsage = (commandName, pathParts, options = []) => {
-  let usage = `/${commandName}`;
-  
-  // Add group/subcommand path
-  for (const part of pathParts) {
-    usage += ` ${part}`;
-  }
-  
-  // Add options
-  for (const opt of options) {
-    usage += ` [${opt.name}]`;
-  }
-  
-  return usage;
-};
+// Generate accurate usage examples for subcommands
+const generateSubcommandExample = (commandName, subcommand, group = null) => {
+  const pathParts = [commandName];
+  if (group) pathParts.push(group);
+  pathParts.push(subcommand.name);
 
-const buildMarkdown = (commandJson) => {
-  let md = `### /${commandJson.name}\n\n`;
-  md += `**Deskripsi:** ${commandJson.description || "-"}\n\n`;
+  const exampleParts = [];
 
-  const allPaths = buildCommandPath(commandJson.options || []);
-  const pathGroups = new Map();
+  (subcommand.options || []).forEach(opt => {
+    let exampleValue = `[${opt.name}]`;
 
-  // Group by unique path
-  for (const { path, option } of allPaths) {
-    const key = path.join(':');
-    if (!pathGroups.has(key)) {
-      pathGroups.set(key, {
-        path,
-        options: []
-      });
+    if (opt.choices?.length) {
+      exampleValue = opt.choices[0].value;
+    } else if (opt.type === ApplicationCommandOptionType.Boolean) {
+      exampleValue = "true";
+    } else if (opt.type === ApplicationCommandOptionType.Attachment) {
+      exampleValue = "file.png";
+    } else if (opt.type === ApplicationCommandOptionType.Number) {
+      exampleValue = "99.99";
+    } else if (opt.type === ApplicationCommandOptionType.Integer) {
+      exampleValue = "100";
+    } else if (opt.type === ApplicationCommandOptionType.User) {
+      exampleValue = "@user";
+    } else if (opt.type === ApplicationCommandOptionType.Channel) {
+      exampleValue = "#channel";
+    } else if (opt.type === ApplicationCommandOptionType.Role) {
+      exampleValue = "@role";
     }
-    pathGroups.get(key).options.push(option);
-  }
 
-  // Build usage section
-  md += `### Usage:\n`;
-  pathGroups.forEach((group) => {
-    const usage = buildCommandUsage(commandJson.name, group.path, group.options);
-    md += `\`${usage}\`\n`;
+    exampleParts.push(`${opt.name}:${exampleValue}`);
   });
 
-  // Build options section if any
-  if (allPaths.length > 0) {
-    md += `\n### Options:\n`;
-    
-    pathGroups.forEach((group) => {
-      const scope = group.path.length > 0 
-        ? ` (${group.path.join(' > ')})` 
-        : '';
-      
-      md += `### Untuk perintah${scope}:\n`;
-      
-      group.options.forEach((opt) => {
-        md += `- \`${opt.name}\`${opt.required ? " (required)" : ""} — ${opt.description || "-"}\n`;
-        
-        if (opt.choices?.length > 0) {
-          md += `  - Pilihan: ${opt.choices.map(c => `\`${c.value}\``).join(", ")}\n`;
-        }
-        
-        // Build accurate example
-        const exampleValue = opt.choices?.[0]?.value || '[value]';
-        const examplePath = group.path.length > 0 
-          ? `${commandJson.name} ${group.path.join(' ')}` 
-          : commandJson.name;
-        
-        md += `  - **Contoh Penggunaan:** \`/${examplePath} ${opt.name}:${exampleValue}\`\n`;
+  const example = `/${pathParts.join(" ")}${exampleParts.length > 0 ? " " : ""}${exampleParts.join(" ")}`;
+  return example;
+};
+
+// Build markdown documentation
+const buildMarkdown = (commandJson) => {
+  let md = `### /${commandJson.name}\n\n`;
+  md += `**Description:** ${commandJson.description || "-"}\n\n`;
+
+  // Process subcommands and groups
+  const subcommands = [];
+
+  (commandJson.options || []).forEach(option => {
+    if (option.type === ApplicationCommandOptionType.Subcommand) {
+      subcommands.push({
+        group: null,
+        ...option
       });
+    } else if (option.type === ApplicationCommandOptionType.SubcommandGroup) {
+      (option.options || []).forEach(subCmd => {
+        if (subCmd.type === ApplicationCommandOptionType.Subcommand) {
+          subcommands.push({
+            group: option.name,
+            ...subCmd
+          });
+        }
+      });
+    }
+  });
+
+  // Generate usage examples
+  if (subcommands.length > 0) {
+    md += `### Usage:\n`;
+
+    const uniqueExamples = new Set();
+
+    subcommands.forEach(subcommand => {
+      const example = generateSubcommandExample(
+        commandJson.name,
+        subcommand,
+        subcommand.group
+      );
+
+      // Avoid duplicates
+      if (!uniqueExamples.has(example)) {
+        uniqueExamples.add(example);
+        md += `- \`${example}\`\n`;
+      }
+    });
+
+    md += "\n";
+  }
+
+  // Add command options details
+  if (subcommands.length > 0) {
+    md += `### Options:\n`;
+
+    subcommands.forEach(subcommand => {
+      const fullPath = subcommand.group
+        ? `${subcommand.group} ${subcommand.name}`
+        : subcommand.name;
+
+      md += `### For \`${fullPath}\`:\n`;
+      md += `${subcommand.description || "No description"}\n`;
+
+      if (subcommand.options?.length > 0) {
+        subcommand.options.forEach(opt => {
+          md += `- \`${opt.name}\` (${OPTION_TYPE_MAP[opt.type] || "Option"})`;
+
+          if (opt.required) {
+            md += ` **[Required]**`;
+          }
+
+          if (opt.autocomplete) {
+            md += ` *(autocomplete)*`;
+          }
+
+          md += `\n`;
+          md += `  - ${opt.description || "No description"}\n`;
+
+          if (opt.choices?.length) {
+            md += `  - Choices: ${opt.choices.map(c => `\`${c.value}\``).join(", ")}\n`;
+          }
+        });
+      } else {
+        md += `*No options*\n`;
+      }
+
+      md += "\n";
     });
   }
 
@@ -263,13 +365,14 @@ const buildMarkdown = (commandJson) => {
   return md;
 };
 
-const allFiles = getAllCommandFiles(commandsDir);
+// Main execution
+const allFiles = getAllCommandFiles(slashCommandsDir);
 const docsMap = {};
 
 for (const { fullPath, relativePath } of allFiles) {
   delete require.cache[require.resolve(fullPath)];
   const command = require(fullPath);
-  
+
   if (!command.data?.toJSON) {
     console.log(`⏩ Skipping ${relativePath} - not a valid command`);
     continue;
@@ -288,12 +391,14 @@ for (const { fullPath, relativePath } of allFiles) {
   }
 }
 
+// Ensure docs directory exists
 fs.mkdirSync(docsDir, { recursive: true });
 
+// Write documentation files
 Object.entries(docsMap).forEach(([folder, entries]) => {
   const filePath = path.join(docsDir, `${folder}.md`);
-  const header = `## 📁 Command: ${folder}\n\n`;
+  const header = `## 📁 Command Category: ${folder}\n\n`;
   const fullContent = header + entries.join("\n");
   fs.writeFileSync(filePath, fullContent);
-  console.log(`📄 ${filePath} created!`);
+  console.log(`📄 Documentation created: ${filePath}`);
 });

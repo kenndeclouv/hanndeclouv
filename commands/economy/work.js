@@ -1,8 +1,8 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { checkCooldown, embedFooter } = require("../../helpers");
+const Inventory = require("../../database/models/Inventory");
 const User = require("../../database/models/User");
 require("dotenv").config();
-const { checkCooldown } = require("../../helpers");
-const Inventory = require("../../database/models/Inventory");
 
 module.exports = {
   data: new SlashCommandBuilder().setName("work").setDescription("Bekerja untuk mendapatkan uang."),
@@ -14,15 +14,13 @@ module.exports = {
       });
     }
     await interaction.deferReply();
-    try {
-      let user = await User.findOne({
-        where: { userId: interaction.user.id },
-      });
+    try { 
+      let user = await User.getCache({ userId: interaction.user.id, guildId: interaction.guild.id });
       if (!user) {
         return interaction.editReply({ content: "kamu belum memiliki akun gunakan `/account create` untuk membuat akun." });
       }
 
-      const laptop = await Inventory.findOne({ where: { userId: user.userId, itemName: "💻 Laptop" } });
+      const laptop = await Inventory.getCache({ userId: user.userId, itemName: "💻 Laptop" });
 
       let cooldownTime = 1;
       if (laptop) {
@@ -51,7 +49,9 @@ module.exports = {
       if (workedMaximally && user.careerMastered < 10) {
         user.careerMastered += 1;
       }
-      await user.save();
+      user.changed("cash", true);
+      user.changed("lastWork", true);
+      await user.saveAndUpdateCache("userId");
 
       const embed = new EmbedBuilder()
         .setColor(payTax ? "Yellow" : "Green")
@@ -63,7 +63,7 @@ module.exports = {
           }`
         )
         .setTimestamp()
-        .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+        .setFooter(embedFooter(interaction));
       await interaction.editReply({ embeds: [embed] });
     } catch (error) {
       console.error("Error during work command execution:", error);

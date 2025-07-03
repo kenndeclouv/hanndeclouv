@@ -1,7 +1,7 @@
 require("dotenv").config();
+const { WebhookClient, ActivityType, EmbedBuilder } = require("discord.js");
 const BotSetting = require("../database/models/BotSetting");
 const { updateStats, updateMinecraftStats } = require("../helpers");
-const { WebhookClient } = require('discord.js');
 
 module.exports = {
   name: "ready",
@@ -9,54 +9,62 @@ module.exports = {
   async execute(client) {
     console.log(`✅ bot siap sebagai ${client.user.tag}`);
 
+    // set presence
     client.user.setPresence({
-      activities: [{ name: process.env.DISCORD_BOT_ACTIVITY }],
-      status: process.env.DISCORD_BOT_STATUS,
+      activities: [
+        {
+          name: process.env.DISCORD_BOT_ACTIVITY,
+          type: ActivityType[process.env.DISCORD_BOT_ACTIVITY_TYPE], // misal: Playing
+        },
+      ],
+      status: process.env.DISCORD_BOT_STATUS || "online",
     });
 
+    const webhookClient = new WebhookClient({ url: process.env.WEBHOOK_ERROR_LOGS });
+
     try {
-      const allSettings = await BotSetting.getAllCache();
+      const runStatsUpdate = async () => {
+        const allSettings = await BotSetting.getAllCache();
 
-      // filter setting yang guild-nya ada dan fitur aktif
-      const activeSettings = allSettings.filter((s) => client.guilds.cache.has(s.guildId) && (s.serverStatsOn || s.minecraftStatsOn));
+        const activeSettings = allSettings.filter(
+          (s) =>
+            client.guilds.cache.has(s.guildId) &&
+            (s.serverStatsOn || s.minecraftStatsOn)
+        );
 
-      // fetch member di semua guild aktif
-      await Promise.all(activeSettings.map((s) => client.guilds.cache.get(s.guildId)?.members.fetch()));
+        // fetch member (penting buat ngitung presence/online)
+        await Promise.all(
+          activeSettings.map((s) =>
+            client.guilds.cache.get(s.guildId)?.members.fetch().catch(() => null)
+          )
+        );
 
-      // INVITE CACHE
-      client.invites = new Map();
-      for (const [guildId, guild] of client.guilds.cache) {
-        try {
-          const invites = await guild.invites.fetch();
-          client.invites.set(guildId, invites);
-        } catch (err) {
-          console.warn(`Gagal fetch invites untuk ${guild.name}`);
-        }
-      }
-
-      // INIT
-      await updateStats(client, activeSettings);
-      await updateMinecraftStats(client, activeSettings);
-
-      // INIT EACH 5 MINUTES
-      setInterval(async () => {
         await updateStats(client, activeSettings);
         await updateMinecraftStats(client, activeSettings);
+      };
+
+      // init pertama
+      await runStatsUpdate();
+
+      // update setiap 5 menit
+      setInterval(async () => {
+        try {
+          await runStatsUpdate();
+        } catch (err) {
+          console.error("[INTERVAL STATS ERROR]", err);
+        }
       }, 5 * 60 * 1000); // 5 menit
     } catch (error) {
-      console.error("Error during ready:", error);
-      // Send DM to owner about the error
-      const webhookClient = new WebhookClient({ url: process.env.WEBHOOK_ERROR_LOGS });
+      console.error("❌ Error during ready:", error);
 
-      const errorEmbed = new EmbedBuilder().setColor("Red").setTitle(`> ❌ Error during ready`).setDescription(`\`\`\`${error}\`\`\``).setFooter(`Error dari server ${interaction.guild.name}`).setTimestamp();
+      const errorEmbed = new EmbedBuilder()
+        .setColor("Red")
+        .setTitle("> ❌ Error during ready event")
+        .setDescription(`\`\`\`${error?.stack || error}\`\`\``)
+        .setFooter({ text: `${client.user.tag}` })
+        .setTimestamp();
 
-      // Kirim ke webhook
-      webhookClient
-        .send({
-          embeds: [errorEmbed],
-        })
-        .catch(console.error);
-      return interaction.editReply({ content: "❌ | Terjadi kesalahan saat menjalankan perintah ini. Silakan coba lagi." });
+      webhookClient.send({ embeds: [errorEmbed] }).catch(console.error);
     }
 
     console.log(`✅ ${client.user.tag} siap di semua server!`);

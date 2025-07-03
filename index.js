@@ -25,7 +25,7 @@ require("dotenv").config();
 /**
  * 🎉 tampilan figlet greeting saat bot run
  */
-figlet("KENNDECLOUV's BOT", "Larry 3D 2", (err, data) => {
+figlet("KYTHIA", "Larry 3D 2", (err, data) => {
   if (err) return console.log("figlet error:", err);
   console.log(data);
 });
@@ -35,13 +35,31 @@ figlet("KENNDECLOUV's BOT", "Larry 3D 2", (err, data) => {
  * - membaca semua command berdasarkan folder kategori
  * - menyimpan ke collection client.commands
  */
+const slashCommandsPath = path.join(__dirname, "commands");
+
 client.commands = new Collection();
-const commandsPath = path.join(__dirname, "commands");
-fs.readdirSync(commandsPath).forEach((category) => {
-  const commandFiles = fs.readdirSync(path.join(commandsPath, category)).filter((file) => file.endsWith(".js"));
+client.aliases = new Collection(); // ⬅️ penting, biar aliasnya ke-track
+
+fs.readdirSync(slashCommandsPath).forEach((category) => {
+  const commandFiles = fs
+    .readdirSync(path.join(slashCommandsPath, category))
+    .filter((file) => file.endsWith(".js"));
+
   for (const file of commandFiles) {
-    const command = require(path.join(commandsPath, category, file));
+    const command = require(path.join(slashCommandsPath, category, file));
+    if (!command || !command.data || typeof command.data.name !== "string") {
+      console.warn(`⚠️ Command ${file} tidak valid atau gak punya .data`);
+      continue;
+    }
+
     client.commands.set(command.data.name, command);
+
+    // 🏷️ ini harus di DALAM loop file, bukan di luar
+    if (Array.isArray(command.aliases)) {
+      for (const alias of command.aliases) {
+        client.aliases.set(alias, command.data.name);
+      }
+    }
   }
 });
 
@@ -50,20 +68,37 @@ fs.readdirSync(commandsPath).forEach((category) => {
  * - membaca semua file di folder events
  * - register event ke client secara dinamis
  */
-const eventsPath = path.join(__dirname, "events");
-fs.readdirSync(eventsPath).forEach((file) => {
-  const event = require(`${eventsPath}/${file}`);
-  if (event.once) {
-    client.once(event.name, (...args) => event.execute(...args, client));
-  } else {
-    client.on(event.name, (...args) => event.execute(...args, client));
-  }
-});
 
-/**
- * 🛡️ sistem auto moderation & message listener
- */
-client.on("messageCreate", system);
+function loadEventsRecursively(dir, client) {
+  const files = fs.readdirSync(dir, { withFileTypes: true });
+
+  for (const file of files) {
+    const fullPath = path.join(dir, file.name);
+
+    if (file.isDirectory()) {
+      // ⬇️ recursive ke subfolder
+      loadEventsRecursively(fullPath, client);
+    } else if (file.isFile() && file.name.endsWith(".js")) {
+      const event = require(fullPath);
+      if (!event.name || typeof event.execute !== "function") {
+        console.warn(`⚠️ Lewatkan ${fullPath}, tidak valid`);
+        continue;
+      }
+
+      if (event.once) {
+        client.once(event.name, (...args) => event.execute(...args, client));
+      } else {
+        client.on(event.name, (...args) => event.execute(...args, client));
+      }
+
+      console.log(`📡 Event loaded: ${event.name} (${fullPath.replace(__dirname, "")})`);
+    }
+  }
+}
+
+// 👇 panggil di index utama
+const eventsPath = path.join(__dirname, "events");
+loadEventsRecursively(eventsPath, client);
 
 /**
  * 💾 koneksi dan sinkronisasi database
@@ -80,14 +115,21 @@ const deployCommands = async () => {
   try {
     console.log("🌀 Memulai refresh perintah aplikasi (/)");
     const commands = [];
-    fs.readdirSync(commandsPath).forEach((category) => {
-      const commandFiles = fs.readdirSync(`${commandsPath}/${category}`).filter((file) => file.endsWith(".js"));
+    fs.readdirSync(slashCommandsPath).forEach((category) => {
+      const commandFiles = fs.readdirSync(`${slashCommandsPath}/${category}`).filter((file) => file.endsWith(".js"));
+
       for (const file of commandFiles) {
-        const command = require(`${commandsPath}/${category}/${file}`);
+        const command = require(`${slashCommandsPath}/${category}/${file}`);
+        if (!command || !command.data || typeof command.data.toJSON !== "function") {
+          console.warn(`⚠️ Command ${file} tidak valid atau gak punya .data`);
+          continue;
+        }
+
         commands.push(command.data.toJSON());
-        console.log(`command yang diload: ${command.data.name}`);
+        console.log(`✅ command diload: ${command.data.name}`);
       }
     });
+
     await rest.put(Routes.applicationCommands(process.env.DISCORD_BOT_CLIENT_ID), { body: commands });
     console.log("✅ Berhasil refresh perintah aplikasi (/)");
   } catch (error) {

@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const User = require("../../database/models/User");
-const { checkPermission } = require("../../helpers");
+const { checkPermission, embedFooter } = require("../../helpers");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -24,7 +24,7 @@ module.exports = {
     }
 
     const user = interaction.options.getUser("user") || interaction.user;
-    const userRecord = await User.getCache("userId", user.id);
+    const userRecord = await User.getCache({ userId: user.id, guildId: interaction.guild.id });
 
     // Fix: Check if userRecord exists and if warnings is a valid array before accessing .length
     if (!userRecord || !Array.isArray(userRecord.warnings) || userRecord.warnings.length === 0) {
@@ -36,15 +36,12 @@ module.exports = {
     const warningsList = userRecord.warnings.map((warning) => `Reason: ${warning.reason}, Date: ${warning.date ? new Date(warning.date).toLocaleString() : "Unknown"}`).join("\n");
 
     const embed = new EmbedBuilder()
-      .setColor("Green")
-      .setTitle(`> Warnings`)
-      .setDescription(`Peringatan untuk <@${user.id}> :\n${warningsList}`)
+      .setColor("Red")
+      // .setTitle(`> Warnings`)
+      .setDescription(`## 🔔 Warnings\nPeringatan untuk <@${user.id}> :\n${warningsList}`)
       .setThumbnail(interaction.client.user.displayAvatarURL())
       .setTimestamp()
-      .setFooter({
-        text: `Sistem`,
-        iconURL: interaction.client.user.displayAvatarURL(),
-      });
+      .setFooter(embedFooter(interaction));
 
     return interaction.editReply({ embeds: [embed] });
   },

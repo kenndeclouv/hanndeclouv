@@ -23,6 +23,20 @@ const { createTicket, closeTicket } = require("../helpers");
 const Ticket = require("../database/models/Ticket");
 const Embed = require("../database/models/Embed");
 require("dotenv").config();
+const path = require("path");
+const fs = require("fs");
+
+const buttonHandlers = new Map();
+
+// load semua file dari folder /button/
+const buttonDir = path.join(__dirname, "..", "buttons");
+const files = fs.readdirSync(buttonDir).filter(file => file.endsWith(".js"));
+
+for (const file of files) {
+  const handler = require(path.join(buttonDir, file));
+  const name = file.replace(".js", ""); // misal: create_ticket.js -> create_ticket
+  buttonHandlers.set(name, handler);
+}
 
 module.exports = {
   name: Events.InteractionCreate,
@@ -40,6 +54,12 @@ module.exports = {
       if (interaction.isChatInputCommand()) {
         const command = client.commands.get(interaction.commandName);
         if (!command) return;
+
+        // Jika di DM, skip permission dan setting guild
+        if (!interaction.guild) {
+          // Eksekusi command langsung
+          return await command.execute(interaction, client);
+        }
 
         // Cek permission command
         if (command.permissions?.length) {
@@ -77,6 +97,7 @@ module.exports = {
           clan: "clanOn",
           nsfw: "nsfwOn",
           checklist: "checklistOn",
+          checklist: "checklistOn",
         };
         const requiredSetting = commandFeatureMap[interaction.commandName];
         if (requiredSetting && !setting[requiredSetting] && interaction.user.id !== process.env.OWNER_ID) {
@@ -95,50 +116,22 @@ module.exports = {
       // ==========================
       if (interaction.isButton()) {
         console.log("✅ Tombol ke-trigger:", interaction.customId);
-
         const customId = interaction.customId;
 
-        // Tombol create_ticket
-        if (customId === "create_ticket") {
-          const ticketConfig = await TicketConfig.findOne({ where: { guildId: interaction.guild.id } });
-          if (!ticketConfig) return interaction.reply({ content: "❌ | Sistem tiket belum dikonfigurasi.", ephemeral: true });
-          return createTicket(interaction, ticketConfig);
+        // Abaikan semua tombol tictactoe
+        if (interaction.customId.startsWith('tictactoe-')) {
+          return; // Biarkan collector game yang menangani
         }
 
-        if (customId === "ticket_close") {
-          const ticket = await Ticket.findOne({ where: { channelId: interaction.channel.id } });
-          if (!ticket) return interaction.reply({ content: "❌ | Ticket tidak ada dalam sistem.", ephemeral: true });
-          return closeTicket(interaction);
+        // exact match
+        if (buttonHandlers.has(customId)) {
+          return buttonHandlers.get(customId)(interaction);
         }
 
-        // Tombol react-role (format: react-<embedId>-<buttonIndex>)
-        if (customId.startsWith("react-")) {
-          const [_, embedId, buttonIndex] = customId.split("-");
-
-          const embedData = await Embed.findByPk(embedId);
-          if (!embedData) return;
-
-          const buttonData = embedData.buttons[buttonIndex];
-          if (!buttonData) return;
-
-          const role = interaction.guild.roles.cache.get(buttonData.roleId);
-          const member = interaction.member;
-
-          if (!role) return interaction.reply({ content: "❌ Role tidak ditemukan.", ephemeral: true });
-
-          // Toggle role
-          if (member.roles.cache.has(role.id)) {
-            await member.roles.remove(role);
-            await interaction.reply({
-              content: `✅ Role **${role.name}** dihapus!`,
-              ephemeral: true,
-            });
-          } else {
-            await member.roles.add(role);
-            await interaction.reply({
-              content: `✅ Role **${role.name}** ditambahkan!`,
-              ephemeral: true,
-            });
+        // prefix match (misal: react-xxx → react.js)
+        for (const [name, handler] of buttonHandlers.entries()) {
+          if (customId.startsWith(`${name}-`)) {
+            return handler(interaction);
           }
         }
       }
@@ -156,6 +149,25 @@ module.exports = {
           }
         }
       }
+      // ==========================
+      // 4. Handler Modal Submit
+      // ==========================
+      if (interaction.isModalSubmit()) {
+        const [prefix] = interaction.customId.split("|"); // e.g. 'embed-create'
+        const modalPath = path.join(__dirname, "../modals", `${prefix}.js`);
+        if (!fs.existsSync(modalPath)) return;
+
+        try {
+          const handler = require(modalPath);
+          await handler(interaction);
+        } catch (err) {
+          console.error(`❌ Error handle modal '${prefix}'`, err);
+          if (!interaction.replied) {
+            await interaction.reply({ content: "❌ Gagal memproses modal ini 😭", ephemeral: true });
+          }
+        }
+        return;
+      }
     } catch (err) {
       // ==========================
       // 4. Global Error Handler
@@ -167,7 +179,7 @@ module.exports = {
         .setColor("Red")
         .setTitle("> ❌ Error event interaction create")
         .setDescription(`\`\`\`${err.stack || err}\`\`\``)
-        .setFooter({ text: `Error dari server ${interaction.guild?.name || "Unknown"}` })
+        .setFooter({ text: `Error dari server ${interaction.guild?.name || (interaction.user?.username ? `DM dari ${interaction.user.username}` : "Unknown")}` })
         .setTimestamp();
 
       // Kirim error ke webhook
@@ -177,7 +189,7 @@ module.exports = {
         await interaction.reply({
           content: "💀 | Ada error saat proses interaksi.",
           ephemeral: true,
-        });
+        }).catch(() => { });
       }
     }
   },

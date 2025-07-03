@@ -1,8 +1,8 @@
 const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, PermissionsBitField } = require("discord.js");
+const TicketConfig = require("../../database/models/TicketConfig");
+const { checkPermission, embedFooter } = require("../../helpers");
 const { createTicketTranscript } = require("../../helpers");
 const Ticket = require("../../database/models/Ticket");
-const TicketConfig = require("../../database/models/TicketConfig");
-const { checkPermission } = require("../../helpers");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -18,6 +18,34 @@ module.exports = {
         .addChannelOption((option) => option.setName("transcript").setDescription("Channel untuk transkrip").setRequired(true))
         .addStringOption((option) => option.setName("title").setDescription("Judul untuk pesan tiket").setRequired(true))
         .addStringOption((option) => option.setName("description").setDescription("Deskripsi untuk pesan tiket").setRequired(true))
+        .addStringOption((option) => option.setName("name").setDescription("Nama untuk tiket").setRequired(true))
+        .addStringOption((option) => option.setName("format").setDescription("Format untuk tiket (contoh: {username}-support)[{username}, {guildname}, {date}, {timestamp}]").setRequired(true))
+        .addStringOption((option) => option.setName("button").setDescription("Nama tombol untuk pesan tiket (contoh: Buat Tiket, Support, dll)").setRequired(false))
+        .addStringOption((option) =>
+          option
+            .setName("buttoncolor")
+            .setDescription("Warna tombol untuk pesan tiket (contoh: Primary, Secondary, Success, Danger, Link)")
+            .setRequired(false)
+            .addChoices(
+              { name: "Primary", value: "Primary" },
+              { name: "Secondary", value: "Secondary" },
+              { name: "Success", value: "Success" },
+              { name: "Danger", value: "Danger" },
+              { name: "Link", value: "Link" }
+            )
+        )
+        .addStringOption((option) => option.setName("image").setDescription("Image untuk pesan tiket (jika tidak ada, akan menggunakan avatar bot)").setRequired(false))
+        .addStringOption((option) => option.setName("thumbnail").setDescription("Thumbnail untuk pesan tiket (jika tidak ada, akan menggunakan avatar bot)").setRequired(false))
+        .addStringOption((option) => option.setName("footer-text").setDescription("Text untuk footer").setRequired(false))
+        .addStringOption((option) => option.setName("footer-icon").setDescription("Icon untuk footer").setRequired(false))
+
+        // .addStringOption((option) => option.setName("ticket-title").setDescription("Judul untuk pesan tiket").setRequired(false))
+        .addStringOption((option) => option.setName("ticket-category").setDescription("Buat channel tiket di ketegori yang ditentukan").setRequired(false))
+        .addStringOption((option) => option.setName("ticket-description").setDescription("Deskripsi untuk pesan tiket").setRequired(false))
+        .addStringOption((option) => option.setName("ticket-image").setDescription("Image untuk pesan tiket").setRequired(false))
+        .addStringOption((option) => option.setName("ticket-thumbnail").setDescription("Thumbnail untuk pesan tiket").setRequired(false))
+        .addStringOption((option) => option.setName("ticket-footer-text").setDescription("Text untuk footer").setRequired(false))
+        .addStringOption((option) => option.setName("ticket-footer-icon").setDescription("Icon untuk footer").setRequired(false))
     )
     .addSubcommand((subcommand) =>
       subcommand
@@ -37,11 +65,10 @@ module.exports = {
   async execute(interaction) {
     if (!interaction.guild) {
       return interaction.reply({
-        content: "🚫 | This command can't use here😭",
-        ephemeral: true,
+        content: "🚫 | This command can't use here😭"
       });
     }
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply();
 
     try {
       if (!(await checkPermission(interaction.member))) {
@@ -61,6 +88,21 @@ module.exports = {
           const transcriptChannel = options.getChannel("transcript");
           const title = options.getString("title");
           const description = options.getString("description");
+          const name = options.getString("name");
+          const format = options.getString("format");
+          const button = options.getString("button");
+          const buttonColor = options.getString("buttoncolor");
+          const image = options.getString("image");
+          const thumbnail = options.getString("thumbnail");
+          const footerText = options.getString("footer-text");
+          const footerIcon = options.getString("footer-icon");
+
+          const ticketCategoryId = options.getString("ticket-category");
+          const ticketDescription = options.getString("ticket-description");
+          const ticketImage = options.getString("ticket-image");
+          const ticketThumbnail = options.getString("ticket-thumbnail");
+          const ticketFooterText = options.getString("ticket-footer-text");
+          const ticketFooterIcon = options.getString("ticket-footer-icon");
 
           // Buat tiket config baru
           const ticket = new TicketConfig({
@@ -71,25 +113,47 @@ module.exports = {
             logsChannelId: logsChannel.id,
             transcriptChannelId: transcriptChannel.id,
 
+            name,
+            format,
             title,
             description,
+            button,
+            buttonColor,
+            image,
+            thumbnail,
+            footerText,
+            footerIcon,
+
+            ticketCategoryId,
+            ticketDescription,
+            ticketImage,
+            ticketThumbnail,
+            ticketFooterText,
+            ticketFooterIcon,
           });
 
-          await ticket.save();
+          await ticket.saveAndUpdateCache("guildId");
 
           // Buat embed pembuatan tiket
           const ticketEmbed = new EmbedBuilder()
-            .setColor("#0099ff")
+            .setColor("Blue")
             .setThumbnail(interaction.client.user.displayAvatarURL({ dynamic: true }))
             .setTitle(title)
-            .setDescription(description)
-            .setFooter({ text: "Klik tombol di bawah untuk membuat tiket." });
+            .setDescription(description ? description : `haloo ${interaction.user}! tiketmu udah terbuat! tolong tunggu staff <@&${staffRole.id}> untuk bantu yaa`);
+          if (ticketImage) ticketEmbed.setImage(ticketImage);
+          if (ticketThumbnail) ticketEmbed.setThumbnail(ticketThumbnail ? ticketThumbnail : interaction.client.user.displayAvatarURL({ dynamic: true }));
+          if (ticketFooterText) ticketEmbed.setFooter({ iconURL: ticketFooterIcon ? ticketFooterIcon : interaction.client.user.displayAvatarURL({ dynamic: true }), text: ticketFooterText ? ticketFooterText : embedFooter(interaction) });
 
-          const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("create_ticket").setLabel("Buat Tiket").setStyle(ButtonStyle.Primary));
+          const row = new ActionRowBuilder().addComponents(new ButtonBuilder().setCustomId("ticketcreate").setLabel(`${button ? button : "Buat Tiket"}`).setStyle(buttonColor ? buttonColor : ButtonStyle.Primary));
 
           // Kirim embed di channel yang ditentukan
-          await channel.send({ embeds: [ticketEmbed], components: [row] });
-          return await interaction.editReply(`🎫 | Sistem tiket berhasil diatur di ${channel}. Judul: **${title}**.`);
+          const message = await channel.send({ embeds: [ticketEmbed], components: [row] });
+          const ticketConfig = await TicketConfig.getCache({ guildId: interaction.guild.id });
+          ticketConfig.messageId = message.id;
+          ticketConfig.changed("messageId", true);
+          await ticketConfig.saveAndUpdateCache("guildId"); // Simpan messageId ke database
+
+          return await interaction.editReply(`🎫 | Sistem tiket berhasil diatur di ${channel}. Judul: **${title}**.\nFormat: **${format}**.`);
         }
         case "remove": {
           const user = options.getUser("user");
@@ -115,12 +179,13 @@ module.exports = {
             try {
               const dmEmbed = new EmbedBuilder()
                 .setColor("Blue")
-                .setTitle("> 🎫 Kamu telah ditambahkan ke tiket!")
+                // .setTitle("> 🎫 Kamu telah ditambahkan ke tiket!")
+                .setDescription(`## 🎫 Kamu telah ditambahkan ke tiket!`)
                 .setDescription(
                   `Kamu telah ditambahkan ke channel tiket [#${interaction.channel.name}](https://discord.com/channels/${interaction.guild.id}/${interaction.channel.id}) di server **${interaction.guild.name}**.\n\nSilakan cek channel tersebut untuk membantu atau berdiskusi.`
                 )
                 .setTimestamp()
-                .setFooter({ text: `Sistem Tiket ${interaction.guild.name}` });
+                .setFooter(embedFooter(interaction));
 
               await user.send({ embeds: [dmEmbed] });
             } catch (err) {
@@ -134,7 +199,7 @@ module.exports = {
         }
         case "close": {
           // Tutup tiket
-          const ticket = await Ticket.findOne({ where: { channelId: interaction.channel.id } });
+          const ticket = await Ticket.getCache({ channelId: interaction.channel.id });
           if (!ticket) {
             return interaction.editReply(`❌ | Channel ini tidak terkait dengan tiket yang terbuka.`);
           }
@@ -176,7 +241,7 @@ module.exports = {
         }
         case "transcript": {
           // Ambil tiket dari database
-          const ticket = await Ticket.findOne({ where: { channelId: interaction.channel.id } });
+          const ticket = await Ticket.getCache({ channelId: interaction.channel.id });
           if (!ticket) {
             return interaction.editReply(`❌ | Channel ini tidak terkait dengan tiket yang terbuka.`);
           }

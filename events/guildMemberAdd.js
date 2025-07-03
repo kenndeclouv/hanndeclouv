@@ -99,11 +99,11 @@ module.exports = {
         .setTitle(`> 🎉 Selamat datang di ${guild.name}!`)
         .setDescription(
           `Haiii ${member.user.username}!\n\n` +
-            "Senang banget kamu udah join ke server ini!\n" +
-            "Jangan ragu buat kenalan, ngobrol, atau tanya-tanya apa aja di sini yaa~\n\n" +
-            "Semoga kamu betah dan dapet banyak temen baru di sini! \n\n" +
-            "Yuk, cek channel perkenalan atau rules dulu biar makin asik!\n\n" +
-            "Have fun dan selamat bersenang-senang!"
+          "Senang banget kamu udah join ke server ini!\n" +
+          "Jangan ragu buat kenalan, ngobrol, atau tanya-tanya apa aja di sini yaa~\n\n" +
+          "Semoga kamu betah dan dapet banyak temen baru di sini! \n\n" +
+          "Yuk, cek channel perkenalan atau rules dulu biar makin asik!\n\n" +
+          "Have fun dan selamat bersenang-senang!"
         )
         .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
         .setTimestamp()
@@ -122,7 +122,7 @@ module.exports = {
         .setColor("Red")
         .setTitle(`> ❌ Error command  guild member add interaction`)
         .setDescription(`\`\`\`${error}\`\`\``)
-        .setFooter(`Error dari server ${interaction.guild.name}`)
+        .setFooter({ text: `Error dari server ${interaction.guild.name}` })
         .setTimestamp();
 
       // Kirim ke webhook

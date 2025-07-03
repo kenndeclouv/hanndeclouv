@@ -7,21 +7,21 @@
 <!-- PROJECT LOGO -->
 <br />
 <p align="center">
-  <a href="https://github.com/kenndeclouv/kenndeclouv-discord-bot">
+  <a href="https://github.com/kenndeclouv/kythia">
   </a>
 
-  <h3 align="center">Kenndeclouv Discord Bot</h3>
+  <h3 align="center">Kythia Discord Bot</h3>
   <p align="center">
-    <a href="https://github.com/kenndeclouv/kenndeclouv-discord-bot/issues">Report Bug</a>
+    <a href="https://github.com/kenndeclouv/kythia/issues">Report Bug</a>
     ·
-    <a href="https://github.com/kenndeclouv/kenndeclouv-discord-bot/issues">Request Feature</a>
+    <a href="https://github.com/kenndeclouv/kythia/issues">Request Feature</a>
   </p>
 </p>
 
 ## 📖 Overview
 
-[![Readme Card](https://github-readme-stats.vercel.app/api/pin/?username=kenndeclouv&repo=kenndeclouv-discord-bot&theme=tokyonight)](https://github.com/kenndeclouv)  
-Kenndeclouv Discord Bot adalah bot Discord yang menyediakan berbagai fitur interaktif seperti sistem leveling, automod, dan perintah slash command untuk berbagai kebutuhan server Discord Anda. Dengan sistem leveling, pengguna mendapatkan XP setiap kali berinteraksi, dan diberikan reward berupa role tertentu setelah mencapai level tertentu.
+[![Readme Card](https://github-readme-stats.vercel.app/api/pin/?username=kenndeclouv&repo=kythia&theme=tokyonight)](https://github.com/kenndeclouv)  
+Kythia Discord Bot adalah bot Discord yang menyediakan berbagai fitur interaktif seperti sistem leveling, automod, dan perintah slash command untuk berbagai kebutuhan server Discord Anda. Dengan sistem leveling, pengguna mendapatkan XP setiap kali berinteraksi, dan diberikan reward berupa role tertentu setelah mencapai level tertentu.
 
 ## 📃 Features
 
@@ -84,8 +84,8 @@ Pastikan kamu sudah menginstal software berikut:
    ```
 3. Clone repository:
    ```bash
-   git clone https://github.com/kenndeclouv/kenndeclouv-discord-bot.git
-   cd kenndeclouv-discord-bot
+   git clone https://github.com/kenndeclouv/kythia.git
+   cd kythia
    ```
 
 ### 3. Install Dependencies
@@ -105,7 +105,7 @@ Pastikan kamu sudah menginstal software berikut:
    ```env
    OWNER_ID=1158654757183959091
    # SETTINGS
-   DISCORD_BOT_NAME=KenndeclouvBot
+   DISCORD_BOT_NAME=KythiaBot
    DISCORD_BOT_DESCRIPTION=Bot untuk server Discord
    DISCORD_BOT_TOKEN=your_bot_token
    DISCORD_BOT_CLIENT_ID=your_bot_client_id

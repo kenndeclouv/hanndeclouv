@@ -1,46 +1,28 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, WebhookClient } = require("discord.js");
-const BotSetting = require("../../database/models/BotSetting");
+const { embedFooter } = require("../../helpers");
 require("dotenv").config();
-
-const { t } = require("../../helpers");
-const getLang = async (guildId) => {
-  const setting = await BotSetting.getCache({ guildId: guildId });
-  return setting?.lang;
-};
 
 module.exports = {
   data: new SlashCommandBuilder().setName("about").setDescription("😋 A brief introduction about this bot"),
 
   async execute(interaction) {
-    // await interaction.sendTyping();
     await interaction.deferReply();
 
     try {
-      const lang = (await getLang(interaction.guildId)) ?? "en";
-
       const embed = new EmbedBuilder()
         .setColor("Blue")
-        .setTitle(`> <:kennmchead:1375315784456343572> ${t("ABOUT_TITLE", lang)}`)
-        .setDescription(
-          t("ABOUT_DESCRIPTION", lang, {
-            botName: interaction.client.user.username,
-            // ownerId: process.env.OWNER_ID,
-            // userMention: interaction.member?.toString() || "kamuu",
-          })
-        )
+        .setDescription(`## ${interaction.client.user.username} here!\nhaloo! Aku ${interaction.client.user.username}\nOwnerkuu ituu kenndeclouv dm diaa yakk kalo ada apaa apaa, atauu ajak collab :)\n\n:date: birthdate\n\`27 /05 / 2022\`\n:computer: owner\n\`kenndeclouv\`\n\nmau invite aku ke server kamu\n   atau cek website ku? Klik tombol di bawah yaa\n\n-# © all rights reserved`)
         .setThumbnail(interaction.client.user.displayAvatarURL())
-        .setFooter({
-          text: t("ABOUT_FOOTER", lang),
-          iconURL: interaction.client.user.displayAvatarURL(),
-        })
+        .setFooter(embedFooter(interaction))
         .setTimestamp();
 
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
-          .setLabel(t("ABOUT_INVITE_BUTTON", lang))
+          .setLabel("🚀 Invite Bot")
           .setStyle(ButtonStyle.Link)
           .setURL(`https://discord.com/oauth2/authorize?client_id=${interaction.client.user.id}&permissions=8&scope=bot+applications.commands`),
-        new ButtonBuilder().setLabel(t("ABOUT_WEBSITE_BUTTON", lang)).setStyle(ButtonStyle.Link).setURL("https://kenndeclouv.my.id")
+        new ButtonBuilder().setLabel("🌐 Website").setStyle(ButtonStyle.Link).setURL("https://kythia.my.id"),
+        new ButtonBuilder().setLabel("👑 Owner Web").setStyle(ButtonStyle.Link).setURL("https://kenndeclouv.my.id")
       );
 
       await interaction.editReply({ embeds: [embed], components: [row] });
@@ -61,7 +43,7 @@ module.exports = {
       webhookClient.send({ embeds: [errorEmbed] }).catch(console.error);
 
       return interaction.editReply({
-        content: t("ABOUT_ERROR", lang),
+        content: "❌ | Terjadi kesalahan saat menjalankan perintah ini. Silakan coba lagi.",
         ephemeral: true,
       });
     }

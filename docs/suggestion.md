@@ -1,28 +1,41 @@
-## 📁 Command: suggestion
+## 📁 Command Category: suggestion
 
 ### /suggestion
 
-**Deskripsi:** Suggestion commands
+**Description:** Suggestion commands
 
 ### Usage:
-`/suggestion setup channel [channel]`
-`/suggestion accept message_id [message_id]`
-`/suggestion decline message_id [message_id]`
-`/suggestion send saran [saran]`
+- `/suggestion setup channel:#channel`
+- `/suggestion accept message_id:[message_id]`
+- `/suggestion decline message_id:[message_id]`
+- `/suggestion send saran:[saran]`
+- `/suggestion list`
 
 ### Options:
-### Untuk perintah (setup > channel):
-- `channel` (required) — Channel for suggestions
-  - **Contoh Penggunaan:** `/suggestion setup channel channel:[value]`
-### Untuk perintah (accept > message_id):
-- `message_id` (required) — Message ID of the suggestion
-  - **Contoh Penggunaan:** `/suggestion accept message_id message_id:[value]`
-### Untuk perintah (decline > message_id):
-- `message_id` (required) — Message ID of the suggestion
-  - **Contoh Penggunaan:** `/suggestion decline message_id message_id:[value]`
-### Untuk perintah (send > saran):
-- `saran` (required) — Isi sarannya
-  - **Contoh Penggunaan:** `/suggestion send saran saran:[value]`
+### For `setup`:
+Setup suggestion channel
+- `channel` (Channel) **[Required]**
+  - Channel for suggestions
+
+### For `accept`:
+Accept a suggestion
+- `message_id` (Text) **[Required]**
+  - Message ID of the suggestion
+
+### For `decline`:
+Decline a suggestion
+- `message_id` (Text) **[Required]**
+  - Message ID of the suggestion
+
+### For `send`:
+Kirimkan saranmu!
+- `saran` (Text) **[Required]**
+  - Isi sarannya
+
+### For `list`:
+Tampilkan semua saran
+*No options*
+
 
 ---
 

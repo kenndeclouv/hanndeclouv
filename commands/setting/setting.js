@@ -1,8 +1,9 @@
 // file: commands/setting/setting.js
-const { SlashCommandBuilder, EmbedBuilder, WebhookClient, ChannelType } = require("discord.js");
+const { SlashCommandBuilder, EmbedBuilder, WebhookClient, ChannelType, PermissionFlagsBits } = require("discord.js");
 const BotSetting = require("../../database/models/BotSetting");
-const { checkPermission } = require("../../helpers");
+const { checkPermission, embedFooter, updateStats } = require("../../helpers");
 require("dotenv").config();
+
 const builder = new SlashCommandBuilder()
   .setName("set")
   .setDescription("Konfigurasi pengaturan Bot")
@@ -161,25 +162,84 @@ const builder = new SlashCommandBuilder()
           .setDescription("Aktif/nonaktif fitur minecraft server stats")
           .addStringOption((opt) => opt.setName("status").setDescription("Aktifkan/nonaktifkan").setRequired(true).addChoices({ name: "Aktifkan", value: "enable" }, { name: "Nonaktifkan", value: "disable" }))
       )
+      .addSubcommand((sub) =>
+        sub
+          .setName("testimony")
+          .setDescription("Aktif/nonaktif fitur testimony")
+          .addStringOption((opt) => opt.setName("status").setDescription("Aktifkan/nonaktifkan").setRequired(true).addChoices({ name: "Aktifkan", value: "enable" }, { name: "Nonaktifkan", value: "disable" }))
+      )
   )
   // SERVER STATS
-  .addSubcommandGroup((group) =>
+  .addSubcommandGroup(group =>
     group
       .setName("stats")
       .setDescription("Pengaturan statistik server")
-      .addSubcommand((sub) =>
-        sub
-          .setName("member-count-channel")
-          .setDescription("Set channel total member")
-          .addChannelOption((opt) => opt.setName("channel").setDescription("Channel untuk stats").setRequired(true))
+      .addSubcommand(sub =>
+        sub.setName("add")
+          .setDescription("Tambah stat baru untuk channel tertentu")
+          .addStringOption(opt => opt
+            .setName("format")
+            .setDescription("Format stat, misal: {memberstotal}")
+            .setRequired(true)
+          )
+          .addChannelOption(opt => opt
+            .setName("channel")
+            .setDescription("Pilih channel yang ingin dijadikan stat (jika tidak dipilih, bot akan membuat channel baru)")
+            .setRequired(false)
+          )
       )
-      .addSubcommand((sub) =>
-        sub
-          .setName("online-count-channel")
-          .setDescription("Set channel member online")
-          .addChannelOption((opt) => opt.setName("channel").setDescription("Channel untuk stats").setRequired(true))
+      .addSubcommand(sub =>
+        sub.setName("edit")
+          .setDescription("Edit format dari stat channel yang udah ada")
+          .addStringOption(opt => opt
+            .setName("stats")
+            .setDescription("Pilih stats yang ingin diubah")
+            .setRequired(true)
+            .setAutocomplete(true)
+          )
+          .addChannelOption(opt => opt
+            .setName("channel")
+            .setDescription("Edit channel stat")
+            .setRequired(false)
+          )
+          .addStringOption(opt => opt
+            .setName("format")
+            .setDescription("Edit format stat, misal: {membersonline}")
+            .setRequired(false)
+          )
+      )
+      .addSubcommand(sub =>
+        sub.setName("enable")
+          .setDescription("Aktifkan stat channel")
+          .addStringOption(opt => opt
+            .setName("stats")
+            .setDescription("Pilih stats yang ingin diaktifkan")
+            .setRequired(true)
+            .setAutocomplete(true)
+          )
+      )
+      .addSubcommand(sub =>
+        sub.setName("disable")
+          .setDescription("Nonaktifkan stat channel")
+          .addStringOption(opt => opt
+            .setName("stats")
+            .setDescription("Pilih stats yang ingin dinonaktifkan")
+            .setRequired(true)
+            .setAutocomplete(true)
+          )
+      )
+      .addSubcommand(sub =>
+        sub.setName("remove")
+          .setDescription("Hapus stat dan channel-nya")
+          .addStringOption(opt => opt
+            .setName("stats")
+            .setDescription("Pilih stats yang ingin dihapus")
+            .setRequired(true)
+            .setAutocomplete(true)
+          )
       )
   )
+
   // ADMINS
   .addSubcommandGroup((group) =>
     group
@@ -323,13 +383,6 @@ const builder = new SlashCommandBuilder()
       .setDescription("Pengaturan server Minecraft")
       .addSubcommand((sub) =>
         sub
-          .setName("setup")
-          .setDescription("Setup semua channel stat Minecraft otomatis")
-          .addChannelOption((opt) => opt.setName("category").setDescription("Kategori tempat channel dibuat").addChannelTypes(ChannelType.GuildCategory).setRequired(true))
-      )
-
-      .addSubcommand((sub) =>
-        sub
           .setName("ip")
           .setDescription("Set IP server Minecraft")
           .addStringOption((opt) => opt.setName("ip").setDescription("IP server Minecraft").setRequired(true))
@@ -366,13 +419,73 @@ const builder = new SlashCommandBuilder()
       .setDescription("Set bot language")
       .addStringOption((opt) => opt.setName("lang").setDescription("Choose language").setRequired(true).addChoices({ name: "Indonesia", value: "id" }, { name: "English", value: "en" }))
   )
+  // TESTIMONY
+  .addSubcommandGroup((group) =>
+    group
+      .setName("testimony")
+      .setDescription("Pengaturan sistem testimoni")
+      .addSubcommand((sub) =>
+        sub
+          .setName("channel")
+          .setDescription("Set channel untuk mengirim testimoni")
+          .addChannelOption((opt) => opt.setName("channel").setDescription("Channel testimoni").setRequired(true))
+      )
+      .addSubcommand((sub) =>
+        sub
+          .setName("feedback-channel")
+          .setDescription("Set channel untuk feedback testimoni")
+          .addChannelOption((opt) => opt.setName("channel").setDescription("Channel feedback testimoni").setRequired(true))
+      )
+      .addSubcommand((sub) =>
+        sub
+          .setName("count-channel")
+          .setDescription("Set channel untuk menampilkan jumlah testimoni (akan diubah namanya otomatis)")
+          .addChannelOption((opt) => opt.setName("channel").setDescription("Channel counter testimoni").setRequired(true))
+      )
+      .addSubcommand((sub) =>
+        sub
+          .setName("count-format")
+          .setDescription("Set format nama channel testimoni counter")
+          .addStringOption((opt) => opt.setName("format").setDescription("Format nama channel, gunakan {count} untuk jumlah. Contoh: testimoni-{count}").setRequired(true))
+      )
+      .addSubcommand((sub) =>
+        sub
+          .setName("reset-count")
+          .setDescription("Reset jumlah testimoni ke 0")
+      )
+      .addSubcommand((sub) =>
+        sub
+          .setName("count")
+          .setDescription("Ubah jumlah testimoni")
+          .addIntegerOption((opt) => opt.setName("value").setDescription("Integer").setRequired(true))
+      )
+  )
   // STANDALONE
-  // .addSubcommand((sub) => sub.setName("language").setDescription("⚙️ Language settings"))
   .addSubcommand((sub) => sub.setName("view").setDescription("Lihat semua pengaturan bot"));
 
 module.exports = {
   data: builder,
   adminOnly: true,
+  async autocomplete(interaction) {
+    const focused = interaction.options.getFocused();
+    const botSetting = await BotSetting.getCache({ guildId: interaction.guild.id });
+    const stats = botSetting?.serverStats ?? [];
+
+    const filtered = stats
+      .filter(stat => {
+        const channel = interaction.guild.channels.cache.get(stat.channelId);
+        return channel && channel.name.toLowerCase().includes(focused.toLowerCase());
+      })
+      .map(stat => {
+        const channel = interaction.guild.channels.cache.get(stat.channelId);
+        return {
+          name: `${channel.name} (${stat.enabled ? "aktif" : "nonaktif"})`,
+          value: channel.id
+        };
+      });
+
+    await interaction.respond(filtered.slice(0, 25)); // Discord limit 25
+  },
   async execute(interaction) {
     if (!interaction.guild) {
       return interaction.reply({
@@ -411,13 +524,10 @@ module.exports = {
 
       // EMBED
       const embed = new EmbedBuilder()
-        .setTitle("> Setting")
+        .setTitle("⚙️ Setting")
         .setColor("Blue")
         .setThumbnail(interaction.client.user.displayAvatarURL())
-        .setFooter({
-          text: "Sistem",
-          iconURL: interaction.client.user.displayAvatarURL(),
-        })
+        .setFooter(embedFooter(interaction))
         .setTimestamp();
 
       switch (group) {
@@ -696,6 +806,7 @@ module.exports = {
             case "nsfw":
             case "checklist":
             case "minecraft-stats":
+            case "testimony":
             case "welcome-out": {
               const featureMap = {
                 "anti-invites": ["antiInviteOn", "deteksi tautan undangan"],
@@ -716,8 +827,9 @@ module.exports = {
                 "welcome-out": ["welcomeOutOn", "welcome out"],
                 nsfw: ["nsfwOn", "konten nsfw"],
                 checklist: ["checklistOn", "checklist"],
-                "minecraft-stats": ["minecraftStatsOn", "checklist"],
+                "minecraft-stats": ["minecraftStatsOn", "minecraft stats"],
                 invites: ["invitesOn", "invites"],
+                testimony: ["testimonyOn", "testimoni"],
               };
 
               const [settingKey, featureName] = featureMap[sub];
@@ -729,24 +841,168 @@ module.exports = {
           }
         }
         case "stats": {
+          // Allowed placeholders are now synced with helpers/index.js placeholders
+          const allowedPlaceholders = [
+            "{memberstotal}",
+            "{online}",
+            "{idle}",
+            "{dnd}",
+            "{offline}",
+            "{bots}",
+            "{humans}",
+            "{online_bots}",
+            "{online_humans}",
+            "{boosts}",
+            "{boost_level}",
+            "{channels}",
+            "{text_channels}",
+            "{voice_channels}",
+            "{categories}",
+            "{announcement_channels}",
+            "{stage_channels}",
+            "{roles}",
+            "{emojis}",
+            "{stickers}",
+            "{guild}",
+            "{guild_id}",
+            "{owner}",
+            "{owner_id}",
+            "{region}",
+            "{verified}",
+            "{partnered}",
+            "{date}",
+            "{time}",
+            "{datetime}",
+            "{day}",
+            "{month}",
+            "{year}",
+            "{hour}",
+            "{minute}",
+            "{second}",
+            "{timestamp}",
+            "{created_date}",
+            "{created_time}",
+            "{guild_age}",
+            "{member_join}",
+          ];
           switch (sub) {
-            case "member-count-channel": {
-              const targetChannel = channel;
+            case "add": {
+              const format = interaction.options.getString("format");
+              let channel = interaction.options.getChannel("channel");
 
-              botSetting.memberCountChannelId = targetChannel.id;
+              const hasAllowedPlaceholder = allowedPlaceholders.some(ph => format.includes(ph));
+              if (!hasAllowedPlaceholder) {
+                return interaction.editReply({ content: "❌ Format harus mengandung salah satu placeholder berikut:\n" + allowedPlaceholders.join(", "), ephemeral: true });
+              }
+
+              // If no channel provided, create a new voice channel in the stats category
+              if (!channel) {
+                // Use Voice channel for stats, like autosetup
+                channel = await interaction.guild.channels.create({
+                  name: format.replace(/{.*?}/g, "0"), // show 0 as placeholder
+                  type: ChannelType.GuildVoice,
+                  parent: botSetting.serverStatsCategoryId,
+                  permissionOverwrites: [
+                    {
+                      id: interaction.guild.roles.everyone,
+                      deny: [PermissionFlagsBits.Connect],
+                      allow: [PermissionFlagsBits.ViewChannel],
+                    },
+                  ],
+                });
+              }
+
+              // Check if already exists
+              const already = botSetting.serverStats?.find(s => s.channelId === channel.id);
+              if (already) {
+                return interaction.editReply({ content: "⚠️ Channel ini sudah terdaftar! Gunakan `/set stats edit` untuk mengubah format.", ephemeral: true });
+              }
+
+              botSetting.serverStats ??= [];
+              botSetting.serverStats.push({ channelId: channel.id, format, enabled: true });
+
+              botSetting.changed("serverStats", true);
               await botSetting.saveAndUpdateCache("guildId");
-
-              embed.setDescription(`Channel <#${targetChannel.id}> berhasil diatur sebagai stats server total member!`);
-              return interaction.editReply({ embeds: [embed] });
+              await updateStats(interaction.client, [botSetting]);
+              return interaction.editReply({ content: `✅ Stat untuk <#${channel.id}> berhasil ditambahkan!\nFormat: \`${format}\`` });
             }
-            case "online-count-channel": {
-              const targetChannel = channel;
 
-              botSetting.onlineCountChannelId = targetChannel.id;
+            case "edit": {
+              // Find stat by stats string option (which is channelId)
+              const statsId = interaction.options.getString("stats");
+              const format = interaction.options.getString("format");
+              let stat = botSetting.serverStats?.find(s => s.channelId === statsId);
+
+              if (!stat) return interaction.editReply({ content: "❌ Stat ini belum terdaftar!", ephemeral: true });
+
+              if (format) {
+                stat.format = format;
+              }
+
+              const hasAllowedPlaceholder = allowedPlaceholders.some(ph => format.includes(ph));
+              if (!hasAllowedPlaceholder) {
+                return interaction.editReply({ content: "❌ Format harus mengandung salah satu placeholder berikut:\n" + allowedPlaceholders.join(", "), ephemeral: true });
+              }
+
+              botSetting.changed("serverStats", true);
+              await botSetting.saveAndUpdateCache("guildId");
+              await updateStats(interaction.client, [botSetting]);
+              return interaction.editReply({ content: `✏️ Format stat di <#${statsId}> berhasil diubah${format ? ` jadi: \`${format}\`` : ""}` });
+            }
+
+            case "enable": {
+              // Find stat by stats string option (which is channelId)
+              const statsId = interaction.options.getString("stats");
+              let stat = botSetting.serverStats?.find(s => s.channelId === statsId);
+
+              if (!stat) return interaction.editReply({ content: "❌ Stat ini belum terdaftar!", ephemeral: true });
+
+              stat.enabled = true;
+              botSetting.changed("serverStats", true);
               await botSetting.saveAndUpdateCache("guildId");
 
-              embed.setDescription(`Channel <#${targetChannel.id}> berhasil diatur sebagai stats server member yang online!`);
-              return interaction.editReply({ embeds: [embed] });
+              await updateStats(interaction.client, [botSetting]);
+              return interaction.editReply({ content: `✅ Stat di <#${statsId}> berhasil diaktifkan.` });
+            }
+            case "disable": {
+              // Find stat by stats string option (which is channelId)
+              const statsId = interaction.options.getString("stats");
+              let stat = botSetting.serverStats?.find(s => s.channelId === statsId);
+
+              if (!stat) return interaction.editReply({ content: "❌ Stat ini belum terdaftar!", ephemeral: true });
+
+              stat.enabled = false;
+              botSetting.changed("serverStats", true);
+              await botSetting.saveAndUpdateCache("guildId");
+
+              await updateStats(interaction.client, [botSetting]);
+              return interaction.editReply({ content: `⛔ Stat di <#${statsId}> berhasil dinonaktifkan.` });
+            }
+
+            case "remove": {
+              // Find stat by stats string option (which is channelId)
+              const statsId = interaction.options.getString("stats");
+              const channel = interaction.guild.channels.cache.get(statsId);
+              const before = botSetting.serverStats?.length || 0;
+
+              botSetting.serverStats = botSetting.serverStats?.filter(s => s.channelId !== statsId);
+              const after = botSetting.serverStats?.length || 0;
+
+              try {
+                if (channel && channel.deletable) {
+                  await channel.delete("Stat channel removed");
+                }
+              } catch (_) { }
+
+              botSetting.changed("serverStats", true);
+              await botSetting.saveAndUpdateCache("guildId");
+
+              const msg = before === after
+                ? "⚠️ Stat ini tidak ditemukan dalam data stats!"
+                : "🗑️ Stat dan channel berhasil dihapus.";
+
+              await updateStats(interaction.client, [botSetting]);
+              return interaction.editReply({ content: msg });
             }
           }
         }
@@ -878,55 +1134,6 @@ module.exports = {
         }
         case "minecraft": {
           switch (sub) {
-            case "setup": {
-              const category = interaction.options.getChannel("category");
-              if (!category || category.type !== ChannelType.GuildCategory) {
-                embed.setDescription("Channel yang dipilih bukan kategori yang valid 😭");
-                return interaction.editReply({ embeds: [embed] });
-              }
-
-              const createStatChannel = async (name, field) => {
-                const ch = await interaction.guild.channels.create({
-                  name,
-                  type: ChannelType.GuildVoice,
-                  parent: category.id,
-                });
-
-                botSetting[field] = ch.id;
-                return ch;
-              };
-
-              // ambil IP dan Port dulu biar bisa generate nama
-              const ip = botSetting.minecraftIp || "0.0.0.0";
-              const port = botSetting.minecraftPort || 25565;
-
-              const ipName = `🌐 ${ip}`;
-              const portName = `🔌 ${port}`;
-              const statusName = `🔵 DONE SETUP`;
-              const playersName = `🎮 0/0`;
-
-              // bikin channel satu per satu
-              const ipChannel = await createStatChannel(ipName, "minecraftIpChannelId");
-              const portChannel = await createStatChannel(portName, "minecraftPortChannelId");
-              const statusChannel = await createStatChannel(statusName, "minecraftStatusChannelId");
-              const playersChannel = await createStatChannel(playersName, "minecraftPlayersChannelId");
-
-              await botSetting.saveAndUpdateCache("guildId");
-
-              embed.setDescription(
-                [
-                  "Berhasil setup Minecraft server stat channel 😋",
-                  `Kategori: <#${category.id}>`,
-                  `- IP: <#${ipChannel.id}>`,
-                  `- Port: <#${portChannel.id}>`,
-                  `- Status: <#${statusChannel.id}>`,
-                  `- Players: <#${playersChannel.id}>`,
-                ].join("\n")
-              );
-
-              return interaction.editReply({ embeds: [embed] });
-            }
-
             case "ip": {
               const ip = interaction.options.getString("ip");
               botSetting.minecraftIp = ip;
@@ -978,7 +1185,64 @@ module.exports = {
             }
           }
         }
-
+        case "testimony": {
+          switch (sub) {
+            case "channel": {
+              if (!channel || channel.type !== 0) { // 0 = GUILD_TEXT
+                embed.setDescription("❌ Channel tidak valid. Pilih channel text.");
+                return interaction.editReply({ embeds: [embed] });
+              }
+              botSetting.testimonyChannelId = channel.id;
+              await botSetting.saveAndUpdateCache("guildId");
+              embed.setDescription(`✅ Channel testimoni berhasil diatur ke <#${channel.id}>!`);
+              return interaction.editReply({ embeds: [embed] });
+            }
+            case "feedback-channel": {
+              if (!channel || channel.type !== 0) {
+                embed.setDescription("❌ Channel tidak valid. Pilih channel text.");
+                return interaction.editReply({ embeds: [embed] });
+              }
+              botSetting.feedbackChannelId = channel.id;
+              await botSetting.saveAndUpdateCache("guildId");
+              embed.setDescription(`✅ Channel feedback testimoni berhasil diatur ke <#${channel.id}>!`);
+              return interaction.editReply({ embeds: [embed] });
+            }
+            case "count-channel": {
+              if (!channel) {
+                embed.setDescription("❌ Channel tidak valid. Pilih channel yang lain.");
+                return interaction.editReply({ embeds: [embed] });
+              }
+              botSetting.testimonyCountChannelId = channel.id;
+              await botSetting.saveAndUpdateCache("guildId");
+              embed.setDescription(`✅ Channel counter testimoni berhasil diatur ke <#${channel.id}>!`);
+              return interaction.editReply({ embeds: [embed] });
+            }
+            case "count-format": {
+              const format = interaction.options.getString("format");
+              if (!format || !format.includes("{count}")) {
+                embed.setDescription("❌ Format harus mengandung `{count}`. Contoh: `testimoni-{count}`");
+                return interaction.editReply({ embeds: [embed] });
+              }
+              botSetting.testimonyCountFormat = format;
+              await botSetting.saveAndUpdateCache("guildId");
+              embed.setDescription(`✅ Format nama channel counter testimoni berhasil diatur ke \`${format}\`!`);
+              return interaction.editReply({ embeds: [embed] });
+            }
+            case "reset-count": {
+              botSetting.testimonyCount = 0;
+              await botSetting.saveAndUpdateCache("guildId");
+              embed.setDescription("✅ Jumlah testimoni berhasil direset ke 0!");
+              return interaction.editReply({ embeds: [embed] });
+            }
+            case "count": {
+              const count = interaction.options.getInteger("count");
+              botSetting.testimonyCount = count;
+              await botSetting.saveAndUpdateCache("guildId");
+              embed.setDescription(`✅ Jumlah testimoni berhasil diatur ke ${count}!`);
+              return interaction.editReply({ embeds: [embed] });
+            }
+          }
+        }
         default: {
           if (!botSetting || !botSetting.dataValues) {
             embed.setDescription("❌ belum ada pengaturan yang tersimpan untuk server ini.");
@@ -1070,10 +1334,7 @@ module.exports = {
           //   text: "pengaturan bot di server ini",
           //   iconURL: interaction.client.user.displayAvatarURL(),
           // });
-          embed.setTitle(" ").setColor("Blue").setDescription(description).setTimestamp().setFooter({
-            text: " ",
-            iconURL: interaction.client.user.displayAvatarURL(),
-          });
+          embed.setTitle(" ").setColor("Blue").setDescription(description).setTimestamp().setFooter(embedFooter(interaction));
 
           return interaction.editReply({ embeds: [embed] });
         }
@@ -1083,7 +1344,7 @@ module.exports = {
       // Send DM to owner about the error
       const webhookClient = new WebhookClient({ url: process.env.WEBHOOK_ERROR_LOGS });
 
-      const errorEmbed = new EmbedBuilder().setColor("Red").setTitle(`> ❌ Error command /set`).setDescription(`\`\`\`${error}\`\`\``).setFooter(`Error dari server ${interaction.guild.name}`).setTimestamp();
+      const errorEmbed = new EmbedBuilder().setColor("Red").setTitle(`> ❌ Error command /set`).setDescription(`\`\`\`${error}\`\`\``).setFooter({ text: `Error dari server ${interaction.guild.name}` }).setTimestamp();
 
       // Kirim ke webhook
       webhookClient

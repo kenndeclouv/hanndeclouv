@@ -1,44 +1,54 @@
-## 📁 Command: leveling
+## 📁 Command Category: leveling
 
 ### /level
 
-**Deskripsi:** Info leveling di server ini.
+**Description:** Info leveling di server ini.
 
 ### Usage:
-`/level add user [user]`
-`/level add level [level]`
-`/level set user [user]`
-`/level set level [level]`
-`/level xp-add user [user]`
-`/level xp-add xp [xp]`
-`/level xp-set user [user]`
-`/level xp-set xp [xp]`
+- `/level profile`
+- `/level leaderboard`
+- `/level add user:@user level:100`
+- `/level set user:@user level:100`
+- `/level xp-add user:@user xp:100`
+- `/level xp-set user:@user xp:100`
 
 ### Options:
-### Untuk perintah (add > user):
-- `user` (required) — Pengguna yang akan ditambahkan levelnya
-  - **Contoh Penggunaan:** `/level add user user:[value]`
-### Untuk perintah (add > level):
-- `level` (required) — Level yang akan ditambahkan
-  - **Contoh Penggunaan:** `/level add level level:[value]`
-### Untuk perintah (set > user):
-- `user` (required) — Pengguna yang akan diset levelnya
-  - **Contoh Penggunaan:** `/level set user user:[value]`
-### Untuk perintah (set > level):
-- `level` (required) — Level yang akan diset
-  - **Contoh Penggunaan:** `/level set level level:[value]`
-### Untuk perintah (xp-add > user):
-- `user` (required) — Pengguna yang akan ditambahkan XPnya
-  - **Contoh Penggunaan:** `/level xp-add user user:[value]`
-### Untuk perintah (xp-add > xp):
-- `xp` (required) — XP yang akan ditambahkan
-  - **Contoh Penggunaan:** `/level xp-add xp xp:[value]`
-### Untuk perintah (xp-set > user):
-- `user` (required) — Pengguna yang akan diset XPnya
-  - **Contoh Penggunaan:** `/level xp-set user user:[value]`
-### Untuk perintah (xp-set > xp):
-- `xp` (required) — XP yang akan diset
-  - **Contoh Penggunaan:** `/level xp-set xp xp:[value]`
+### For `profile`:
+Lihat profil level Kamu.
+*No options*
+
+### For `leaderboard`:
+Lihat papan peringkat level.
+*No options*
+
+### For `add`:
+Tambahkan level ke pengguna.
+- `user` (User) **[Required]**
+  - Pengguna yang akan ditambahkan levelnya
+- `level` (Number) **[Required]**
+  - Level yang akan ditambahkan
+
+### For `set`:
+Set level ke pengguna.
+- `user` (User) **[Required]**
+  - Pengguna yang akan diset levelnya
+- `level` (Number) **[Required]**
+  - Level yang akan diset
+
+### For `xp-add`:
+Tambahkan XP ke pengguna.
+- `user` (User) **[Required]**
+  - Pengguna yang akan ditambahkan XPnya
+- `xp` (Number) **[Required]**
+  - XP yang akan ditambahkan
+
+### For `xp-set`:
+Set XP ke pengguna.
+- `user` (User) **[Required]**
+  - Pengguna yang akan diset XPnya
+- `xp` (Number) **[Required]**
+  - XP yang akan diset
+
 
 ---
 

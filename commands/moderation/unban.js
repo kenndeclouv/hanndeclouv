@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { checkPermission } = require("../../helpers");
+const { checkPermission, embedFooter } = require("../../helpers");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -31,11 +31,11 @@ module.exports = {
       await interaction.guild.members.unban(userId);
       const embed = new EmbedBuilder()
         .setColor("Green")
-        .setTitle(`> Unban member`)
-        .setDescription(`<@${userId}> telah diunbann dari server ini.`)
+        // .setTitle(`> Unban member`)
+        .setDescription(`## 🔓 Unban\n<@${userId}> telah diunbann dari server ini.`)
         .setThumbnail(interaction.client.user.displayAvatarURL())
         .setTimestamp()
-        .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+        .setFooter(embedFooter(interaction));
       return interaction.editReply({ embeds: [embed] });
     } catch (error) {
       return interaction.editReply({ content: "Tidak bisa membatasi pengguna tersebut. Silakan periksa ID." });

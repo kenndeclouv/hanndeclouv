@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const User = require("../../database/models/User");
+const { checkCooldown, embedFooter } = require("../../helpers");
 require("dotenv").config();
-const { checkCooldown } = require("../../helpers");
 
 module.exports = {
   data: new SlashCommandBuilder().setName("daily").setDescription("Kumpulkan uang harian kamu."),
@@ -14,9 +14,7 @@ module.exports = {
     }
     await interaction.deferReply();
     try {
-      let user = await User.findOne({
-        where: { userId: interaction.user.id },
-      });
+      let user = await User.getCache({ userId: interaction.user.id, guildId: interaction.guild.id });
       if (!user) {
         return interaction.reply({ content: "kamu belum memiliki akun gunakan `/account create` untuk membuat akun." });
       }
@@ -31,15 +29,17 @@ module.exports = {
       const randomCash = Math.floor(Math.random() * 101) + 50;
       user.cash += randomCash;
       user.lastDaily = Date.now();
-      await user.save();
+      user.changed("cash", true);
+      user.changed("lastDaily", true);
+      await user.saveAndUpdateCache("userId");
 
       const embed = new EmbedBuilder()
         .setColor("Green")
-        .setTitle("> Hasil Mengumpulkan Uang Harian")
+        .setDescription("## 💵 Hasil Mengumpulkan Uang Harian")
         .setThumbnail(interaction.user.displayAvatarURL())
         .setDescription(`kamu mengumpulkan uang harian kamu sebesar **${randomCash} uang**!`)
         .setTimestamp()
-        .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+        .setFooter(embedFooter(interaction));
       return interaction.editReply({ embeds: [embed] });
     } catch (error) {
       console.error("Error during daily command execution:", error);

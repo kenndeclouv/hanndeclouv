@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const User = require("../../database/models/User");
+const { embedFooter } = require("../../helpers");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -19,12 +20,8 @@ module.exports = {
       const target = interaction.options.getUser("target");
       const amount = interaction.options.getInteger("amount");
 
-      const giver = await User.findOne({
-        where: { userId: interaction.user.id },
-      });
-      const receiver = await User.findOne({
-        where: { userId: target.id },
-      });
+      const giver = await User.getCache({ userId: interaction.user.id, guildId: interaction.guild.id });
+      const receiver = await User.getCache({ userId: target.id, guildId: interaction.guild.id });
 
       if (!giver || giver.bank < amount) {
         return interaction.editReply({ content: "kamu tidak memiliki uang di bank yang cukup untuk mentransfer." });
@@ -45,18 +42,20 @@ module.exports = {
       giver.bank -= amount + fee;
       receiver.bank += amount;
 
-      await giver.save();
-      await receiver.save();
+      giver.changed("bank", true);
+      receiver.changed("bank", true);
+      await giver.saveAndUpdateCache("userId");
+      await receiver.saveAndUpdateCache("userId");
 
       const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 
       const confirmEmbed = new EmbedBuilder()
         .setColor("Yellow")
-        .setTitle("> Konfirmasi Transfer Uang")
+        .setDescription("## 💵 Konfirmasi Transfer Uang")
         .setThumbnail(interaction.user.displayAvatarURL())
         .setDescription(`kamu akan mentransfer **${amount} uang** ke **${target.username}** dengan biaya **${fee} uang**. Apakah kamu ingin melanjutkan?`)
         .setTimestamp()
-        .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+        .setFooter(embedFooter(interaction));
 
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder().setCustomId("confirm").setLabel("Konfirmasi").setStyle(ButtonStyle.Success),
@@ -72,20 +71,20 @@ module.exports = {
         if (i.customId === "confirm") {
           const embed = new EmbedBuilder()
             .setColor("Green")
-            .setTitle("> Berhasil Transfer Uang")
+            .setDescription("## 💵 Berhasil Transfer Uang")
             .setThumbnail(interaction.user.displayAvatarURL())
             .setDescription(`kamu berhasil mentransfer **${amount} uang** ke **${target.username}** dengan biaya **${fee} uang**!`)
             .setTimestamp()
-            .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+            .setFooter(embedFooter(interaction));
           await i.update({ embeds: [embed], components: [] });
 
           const targetEmbed = new EmbedBuilder()
             .setColor("Green")
-            .setTitle("> kamu Mendapatkan Transfer Uang")
+            .setDescription("## 💵 kamu Mendapatkan Transfer Uang")
             .setThumbnail(interaction.user.displayAvatarURL())
             .setDescription(`kamu menerima **${amount} uang** transfer ke bank kamu dari **${interaction.user.username}**!`)
             .setTimestamp()
-            .setFooter({ text: `Diberikan oleh ${interaction.user.username}`, iconURL: interaction.user.displayAvatarURL() });
+            .setFooter(embedFooter(interaction));
           await target.send({ embeds: [targetEmbed] });
         } else if (i.customId === "cancel") {
           await i.update({ content: "Transfer dibatalkan.", components: [] });

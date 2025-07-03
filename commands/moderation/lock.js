@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, PermissionFlagsBits, WebhookClient } = require("discord.js");
-const { checkPermission } = require("../../helpers");
+const { checkPermission, embedFooter } = require("../../helpers");
 require("dotenv").config();
 module.exports = {
   data: new SlashCommandBuilder()
@@ -47,10 +47,7 @@ module.exports = {
         .setDescription(`Channel ini telah dikunci oleh <@${interaction.user.id}>`)
         .setThumbnail(interaction.user.displayAvatarURL())
         .setTimestamp()
-        .setFooter({
-          text: `Sistem`,
-          iconURL: interaction.client.user.displayAvatarURL(),
-        });
+        .setFooter(embedFooter(interaction));
 
       try {
         await channel.send({ embeds: [lockEmbed] });
@@ -65,10 +62,7 @@ module.exports = {
         .setDescription(`**${channel.name}** telah dikunci.`)
         .setThumbnail(interaction.user.displayAvatarURL())
         .setTimestamp()
-        .setFooter({
-          text: `Dikunci oleh ${interaction.user.tag}`,
-          iconURL: interaction.user.displayAvatarURL(),
-        });
+        .setFooter(embedFooter(interaction));
 
       return interaction.editReply({ embeds: [embed] });
     } catch (error) {
@@ -76,7 +70,7 @@ module.exports = {
       // Send DM to owner about the error
       const webhookClient = new WebhookClient({ url: process.env.WEBHOOK_ERROR_LOGS });
 
-      const errorEmbed = new EmbedBuilder().setColor("Red").setTitle(`> ❌ Error command /lock`).setDescription(`\`\`\`${error}\`\`\``).setFooter(`Error dari server ${interaction.guild.name}`).setTimestamp();
+      const errorEmbed = new EmbedBuilder().setColor("Red").setTitle(`> ❌ Error command /lock`).setDescription(`\`\`\`${error}\`\`\``).setFooter({ text: `Error dari server ${interaction.guild.name}` }).setTimestamp();
 
       // Kirim ke webhook
       webhookClient

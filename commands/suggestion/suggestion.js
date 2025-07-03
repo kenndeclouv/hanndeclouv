@@ -41,7 +41,7 @@ module.exports = {
         ephemeral: true,
       });
     }
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply();
     try {
       const subcommand = interaction.options.getSubcommand();
       const guildId = interaction.guild.id;
@@ -72,7 +72,7 @@ module.exports = {
           .setDescription(
             `halo @everyone 🥰\n\nuntuk mengirimkan saran, tinggal kirim pesannya di channel ini atau pakai command \`/suggestion send\`!\n\n> 💡 tips:\n- sopan dan jelas\n- sertakan alasan kalau perlu\n- jangan toxic yaa 🥺\n\nterima kasih untuk kontribusinyaa 💕`
           )
-          .setFooter({ text: "system suggestion" })
+          .setFooter(embedFooter(interaction))
           .setTimestamp();
 
         await channel.send({ content: "@everyone", embeds: [guideEmbed] });
@@ -121,7 +121,7 @@ module.exports = {
           .setColor("Yellow")
           .setTitle("💡 Saran Baru")
           .setDescription(suggestionText)
-          .setFooter({ text: `Dikirim oleh: ${interaction.user.tag}` })
+          .setFooter(embedFooter(interaction))
           .setTimestamp();
 
         const sent = await channel.send({ embeds: [suggestionEmbed] });

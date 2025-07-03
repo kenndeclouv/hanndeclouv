@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { checkPermission } = require("../../helpers");
+const { checkPermission, embedFooter } = require("../../helpers");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("unmute")
@@ -32,11 +32,11 @@ module.exports = {
       await member.voice.setMute(false, "Unmuted by command.");
       const embed = new EmbedBuilder()
         .setColor("Green")
-        .setTitle(`> Unmute member`)
-        .setDescription(`<@${user.id}> telah diunmute.`)
+        // .setTitle(`> Unmute member`)
+        .setDescription(`## 🔊 Unmute\n<@${user.id}> telah diunmute.`)
         .setThumbnail(interaction.client.user.displayAvatarURL())
         .setTimestamp()
-        .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+        .setFooter(embedFooter(interaction));
       return interaction.editReply({ embeds: [embed] });
     } else {
       return interaction.editReply({ content: "Pengguna tersebut tidak ada di server ini!" });

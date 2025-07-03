@@ -14,11 +14,10 @@ module.exports = {
     if (!interaction.guild) {
       return interaction.reply({
         content: "🚫 | This command can't use here😭",
-        ephemeral: true,
       });
     }
+    await interaction.deferReply();
     try {
-      await interaction.deferReply({ ephemeral: true });
 
       const subcommand = interaction.options.getSubcommand();
       let updated = 0;

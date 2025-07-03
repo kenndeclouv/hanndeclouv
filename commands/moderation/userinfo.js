@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { checkPermission } = require("../../helpers");
+const { checkPermission, embedFooter } = require("../../helpers");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("userinfo")
@@ -25,12 +25,27 @@ module.exports = {
     const member = await interaction.guild.members.fetch(user.id);
     const embed = new EmbedBuilder()
       .setColor("Green")
-      .setTitle(`> User info`)
-      .setDescription(`Informasi pengguna **${user.tag}**`)
-      .addFields({ name: "Bergabung di server", value: member.joinedAt.toDateString() }, { name: "Roles", value: member.roles.cache.map((role) => role.name).join(", ") || "None" })
+      // .setTitle(`> User info`)
+      .setDescription(`## 📊 User info\nInformasi pengguna **${user.tag}**`)
+      .addFields(
+        { name: "Username", value: `${user.username}`, inline: true },
+        { name: "Tag", value: `#${user.discriminator}`, inline: true },
+        { name: "User ID", value: user.id, inline: false },
+        { name: "Akun Dibuat", value: `<t:${Math.floor(user.createdTimestamp / 1000)}:F>`, inline: false },
+        { name: "Bergabung di server", value: `<t:${Math.floor(member.joinedTimestamp / 1000)}:F>`, inline: false },
+        { name: "Bot?", value: user.bot ? "Ya" : "Tidak", inline: true },
+        { name: "Status", value: member.presence?.status ? member.presence.status : "Tidak diketahui", inline: true },
+        {
+          name: "Roles", value: member.roles.cache
+            .filter(role => role.id !== interaction.guild.id)
+            .sort((a, b) => b.position - a.position)
+            .map(role => `<@&${role.id}>`)
+            .join(", ") || "None", inline: false
+        }
+      )
       .setThumbnail(interaction.client.user.displayAvatarURL())
       .setTimestamp()
-      .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+      .setFooter(embedFooter(interaction));
     return interaction.editReply({ embeds: [embed] });
   },
 };

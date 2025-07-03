@@ -56,11 +56,10 @@ module.exports = {
   async execute(interaction) {
     if (!interaction.guild) {
       return interaction.reply({
-        content: "🚫 | This command can't use here😭",
-        ephemeral: true,
+        content: "🚫 | This command can't use here😭"
       });
     }
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply();
     const subcommand = interaction.options.getSubcommand();
     let guildId = interaction.guild.id;
     let setting = await BotSetting.getCache({ guildId: guildId });
@@ -183,7 +182,8 @@ module.exports = {
         }
         await petFood.destroy();
         userPet.hunger = Math.min(userPet.hunger + 20, 100);
-        await userPet.save();
+        userPet.changed("hunger", true);
+        await userPet.saveAndUpdateCache("userId");
 
         // Check if hunger exceeds the maximum limit
         if (userPet.hunger >= 100) {
@@ -213,7 +213,8 @@ module.exports = {
         }
         // Update happiness level
         userPet.happiness = Math.min(userPet.happiness + 20, 100);
-        await userPet.save();
+        userPet.changed("happiness", true);
+        await userPet.saveAndUpdateCache("userId");
 
         const embed = new EmbedBuilder()
           .setTitle(`> yeyy kamu berhasil bermain dengan pet!`)
@@ -238,7 +239,7 @@ module.exports = {
         const embed = new EmbedBuilder()
           .setTitle(`> info pet kamuu`)
           .setDescription(
-            `${userPet.pet.icon} ${userPet.pet.name} tingkat ${userPet.pet.rarity} dengan nama ${userPet.petName}, tipe bonus ${userPet.pet.bonusType} dengan nilai ${userPet.pet.bonusValue}, tingkat kebahagiaan ${userPet.happiness}, tingkat kelaparan ${userPet.hunger}, level pet ${userPet.level}`
+            `${userPet.pet.icon} ${userPet.pet.name} tingkat ${userPet.pet.rarity} dengan nama **${userPet.petName}**, tipe bonus ${userPet.pet.bonusType} dengan nilai **${userPet.pet.bonusValue}**, tingkat kebahagiaan **${userPet.happiness}**, tingkat kelaparan **${userPet.hunger}**, level pet **${userPet.level}**`
           )
           .setColor("Blue")
           .setThumbnail(interaction.user.displayAvatarURL({ dynamic: true }))
@@ -251,7 +252,7 @@ module.exports = {
       if (subcommand === "use") {
         // Cooldown check
         const userId = interaction.user.id;
-        const user = await User.findOne({ where: { userId } });
+        const user = await User.getCache({ userId, guildId: interaction.guild.id });
         const userPet = await UserPet.findOne({ where: { userId }, include: { model: Pet, as: "pet" } });
         const cooldown = checkCooldown(userPet.lastUse, setting.petCooldown);
         if (cooldown.remaining) {
@@ -272,7 +273,8 @@ module.exports = {
         user.xp += userPet.pet.bonusValue * multiplier;
 
         userPet.lastUse = new Date();
-        await userPet.save();
+        userPet.changed("lastUse", true);
+        await userPet.saveAndUpdateCache("userId");
 
         if (userPet.pet.bonusType === "xp") {
           user.xp += userPet.pet.bonusValue * multiplier;
@@ -280,7 +282,8 @@ module.exports = {
           user.cash += userPet.pet.bonusValue * multiplier;
         }
 
-        await user.save();
+        user.changed("xp", true);
+        await user.saveAndUpdateCache("userId");
         const embed = new EmbedBuilder()
           .setTitle(`> yeyy kamu berhasil menggunakan pet!`)
           .setDescription(`${userPet.pet.icon} **${userPet.pet.name}** tingkat ${userPet.pet.rarity}, kamu mendapatkan bonus ${userPet.pet.bonusType} +${userPet.pet.bonusValue * multiplier}`)
@@ -294,7 +297,7 @@ module.exports = {
       // gacha pet
       if (subcommand === "gacha") {
         const userId = interaction.user.id;
-        const user = await User.findOne({ where: { userId } });
+        const user = await User.getCache({ userId, guildId: interaction.guild.id });
         const userPet = await UserPet.findOne({ where: { userId }, include: { model: Pet, as: "pet" } });
 
         if (!userPet) {
@@ -345,7 +348,7 @@ module.exports = {
 
       if (subcommand === "sell") {
         const userId = interaction.user.id;
-        const user = await User.findOne({ where: { userId } });
+        const user = await User.getCache({ userId, guildId: interaction.guild.id });
         const userPet = await UserPet.findOne({ where: { userId }, include: { model: Pet, as: "pet" } });
         if (!userPet) {
           return interaction.editReply({ content: "❌ Kamu belum memiliki pet untuk dijual!" });
@@ -362,7 +365,8 @@ module.exports = {
         const petValue = rarityValue[rarity] * userPet.level;
         user.cash += petValue;
         await userPet.destroy();
-        await user.save();
+        user.changed("cash", true);
+        await user.saveAndUpdateCache("userId");
         return interaction.editReply({ content: `✅ Pet berhasil dijual! Kamu mendapatkan ${petValue}` });
       }
 
@@ -393,11 +397,12 @@ module.exports = {
       // edit name pet
       if (subcommand === "editname") {
         const userId = interaction.user.id;
-        const user = await User.findOne({ where: { userId } });
+        const user = await User.getCache({ userId, guildId: interaction.guild.id });
         const userPet = await UserPet.findOne({ where: { userId }, include: { model: Pet, as: "pet" } });
         const newName = interaction.options.getString("name");
         userPet.petName = newName;
-        await userPet.save();
+        userPet.changed("petName", true);
+        await userPet.saveAndUpdateCache("userId");
         const embed = new EmbedBuilder()
           .setTitle(`> yeyy nama pet berhasil diubah!`)
           .setDescription(`${userPet.pet.icon} **${userPet.pet.name}** tingkat ${userPet.pet.rarity} dengan nama ${userPet.petName}`)
@@ -425,7 +430,7 @@ module.exports = {
       // Send DM to owner about the error
       const webhookClient = new WebhookClient({ url: process.env.WEBHOOK_ERROR_LOGS });
 
-      const errorEmbed = new EmbedBuilder().setColor("Red").setTitle(`> ❌ Error command /pet`).setDescription(`\`\`\`${error}\`\`\``).setFooter(`Error dari server ${interaction.guild.name}`).setTimestamp();
+      const errorEmbed = new EmbedBuilder().setColor("Red").setTitle(`> ❌ Error command /pet`).setDescription(`\`\`\`${error}\`\`\``).setFooter({ text: `Error dari server ${interaction.guild.name}` }).setTimestamp();
 
       // Kirim ke webhook
       webhookClient

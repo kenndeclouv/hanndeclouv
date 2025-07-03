@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const User = require("../../database/models/User");
+const { embedFooter } = require("../../helpers");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -22,7 +23,7 @@ module.exports = {
     try {
       const type = interaction.options.getString("type");
       let amount = interaction.options.getInteger("amount");
-      const user = await User.findOne({ where: { userId: interaction.user.id } });
+      const user = await User.getCache({ userId: interaction.user.id, guildId: interaction.guild.id });
 
       if (!user) {
         return interaction.editReply({ content: "Pengguna tidak ditemukan." });
@@ -42,15 +43,17 @@ module.exports = {
 
       user.cash -= amount;
       user.bank += amount;
-      await user.save();
+      user.changed("cash", true);
+      user.changed("bank", true);
+      await user.saveAndUpdateCache("userId");
 
       const embed = new EmbedBuilder()
         .setColor("Green")
-        .setTitle("> Hasil Menyimpan Uang")
+        .setDescription("## 💵 Hasil Menyimpan Uang")
         .setThumbnail(interaction.user.displayAvatarURL())
         .setDescription(`Kamu menyimpan **${amount} uang** ke bank!`)
         .setTimestamp()
-        .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+        .setFooter(embedFooter(interaction));
 
       return interaction.editReply({ embeds: [embed] });
     } catch (error) {

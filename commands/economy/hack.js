@@ -1,8 +1,9 @@
-const { SlashCommandBuilder, EmbedBuilder, PermissionsBitField } = require("discord.js");
-const User = require("../../database/models/User"); // pastikan model User benar
-require("dotenv").config();
-const { checkCooldown } = require("../../helpers");
+const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { checkCooldown, embedFooter } = require("../../helpers");
+const BotSetting = require("../../database/models/BotSetting");
 const Inventory = require("../../database/models/Inventory");
+const User = require("../../database/models/User");
+require("dotenv").config();
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -20,11 +21,13 @@ module.exports = {
     await interaction.deferReply();
     try {
       const targetUser = interaction.options.getUser("target");
-      const user = await User.findOne({ where: { userId: interaction.user.id } });
-      const target = await User.findOne({ where: { userId: targetUser.id } });
+      const user = await User.getCache({ userId: interaction.user.id, guildId: interaction.guild.id });
+      const target = await User.getCache({ userId: targetUser.id, guildId: interaction.guild.id });
+
+      let botSetting = await BotSetting.getCache({ guildId: interaction.guild.id });
 
       // Cooldown check
-      const cooldown = checkCooldown(user.lastHack, process.env.HACK_COOLDOWN);
+      const cooldown = checkCooldown(user.lastHack, botSetting.hackCooldown);
       if (cooldown.remaining) {
         return interaction.editReply({ content: `🕒 | kamu dapat meng-hack lainnya dalam **${cooldown.time}**!` });
       }
@@ -55,7 +58,7 @@ module.exports = {
 
       // buat embed fake hack
       const embed = new EmbedBuilder()
-        .setTitle("> Hacking in Progress...")
+        .setDescription("## 💵 Hacking in Progress...")
         .setDescription(`${interaction.user.username} sedang meng-hack ${targetUser.username}... dengan kemungkinan berhasil **${user.hackMastered || 10}%**`)
         .setThumbnail(interaction.user.displayAvatarURL())
         .setColor("#f7f7f7")
@@ -80,19 +83,18 @@ module.exports = {
             user.hackMastered = (user.hackMastered || 10) + 1;
           }
           target.bank = 0;
-          await user.save();
-          await target.save();
+          user.changed("bank", true);
+          target.changed("bank", true);
+          await user.saveAndUpdateCache("userId");
+          await target.saveAndUpdateCache("userId");
 
           const successEmbed = new EmbedBuilder()
             .setColor("Green")
-            .setTitle("> Hack berhasil!")
+            .setDescription("## 💵 Hack berhasil!")
             .setThumbnail(interaction.user.displayAvatarURL())
             .setDescription(`🎉 | kamu berhasil meng-hack **${targetUser.username}** dan mendapatkan semua uang di bank mereka!`)
             .setTimestamp()
-            .setFooter({
-              text: `Diminta oleh ${interaction.user.username}`,
-              iconURL: interaction.user.displayAvatarURL(),
-            });
+            .setFooter(embedFooter(interaction));
 
           await interaction.editReply({ embeds: [successEmbed] });
         } else {
@@ -101,20 +103,19 @@ module.exports = {
           if (user.bank >= penalty) {
             user.bank -= penalty;
             target.bank += penalty;
-            await user.save();
-            await target.save();
+            user.changed("bank", true);
+            target.changed("bank", true);
+            await user.saveAndUpdateCache("userId");
+            await target.saveAndUpdateCache("userId");
           }
 
           const failureEmbed = new EmbedBuilder()
             .setColor("Red")
-            .setTitle("> Hack gagal!")
+            .setDescription("## 💵 Hack gagal!")
             .setThumbnail(interaction.user.displayAvatarURL())
             .setDescription(`❌ | kamu gagal meng-hack **${targetUser.username}** dan kehilangan **${penalty}** uang dari bank kamu.`)
             .setTimestamp()
-            .setFooter({
-              text: `Diminta oleh ${interaction.user.username}`,
-              iconURL: interaction.user.displayAvatarURL(),
-            });
+            .setFooter(embedFooter(interaction));
 
           await interaction.editReply({ embeds: [failureEmbed] });
         }

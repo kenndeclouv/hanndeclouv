@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, WebhookClient } = require("discord.js");
+const { embedFooter } = require("../../helpers");
 require("dotenv").config();
 
 module.exports = {
@@ -12,13 +13,10 @@ module.exports = {
 
       const embed = new EmbedBuilder()
         .setColor("Blue")
-        .setTitle("🏓 Pong!")
+        .setDescription("## 🏓 Pong!")
         .addFields({ name: "Bot Latency", value: `\`${botLatency}ms\``, inline: true }, { name: "API Latency", value: `\`${apiLatency}ms\``, inline: true })
         .setThumbnail(interaction.client.user.displayAvatarURL())
-        .setFooter({
-          text: `Diminta oleh ${interaction.user.tag}`,
-          iconURL: interaction.user.displayAvatarURL(),
-        })
+        .setFooter(embedFooter(interaction))
         .setTimestamp();
 
       await interaction.editReply({ content: null, embeds: [embed] });

@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { checkPermission } = require("../../helpers");
+const { checkPermission, embedFooter } = require("../../helpers");
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("mute")
@@ -38,12 +38,12 @@ module.exports = {
     if (member) {
       await member.voice.setMute(true, "Muted by command.");
       const embed = new EmbedBuilder()
-        .setColor("Green")
-        .setTitle("> Muted")
-        .setDescription(`**${user.tag}** telah dimatikan oleh **${interaction.user.tag}** melalui command.`)
+        .setColor("Red")
+        // .setTitle("> Muted")
+        .setDescription(`## 🔇 Muted\n**${user.tag}** telah dimute oleh **${interaction.user.tag}** melalui command.`)
         .setThumbnail(interaction.client.user.displayAvatarURL())
         .setTimestamp()
-        .setFooter({ text: `Diamatkan oleh ${interaction.user.tag}`, iconURL: interaction.user.displayAvatarURL() });
+        .setFooter(embedFooter(interaction));
       return interaction.editReply({ embeds: [embed] });
     } else {
       return interaction.editReply({ content: "That user is not in this server!" });

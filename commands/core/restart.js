@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType, WebhookClient } = require("discord.js");
-const { adminOnly } = require("../moderation/lock");
+// const { adminOnly } = require("../moderation/lock");
 require("dotenv").config();
 module.exports = {
   data: new SlashCommandBuilder().setName("restart").setDescription("🔁 restart bot"),
@@ -13,9 +13,9 @@ module.exports = {
 
       // Kirim embed dengan tombol konfirmasi
       const embed = new EmbedBuilder()
-        .setColor("#ffcc00")
-        .setTitle("> ⚠️ Restart bot")
-        .setDescription("<:kennmchead:1375315784456343572> kenn yakin mauu merestart bot inii?")
+        .setColor("Yellow")
+        // .setTitle("> ⚠️ Restart bot")
+        .setDescription("## Restart bot\n<:kennmchead:1375315784456343572> kenn yakin mauu merestart bot inii?")
         .setThumbnail(interaction.client.user.displayAvatarURL());
 
       const row = new ActionRowBuilder().addComponents(
@@ -36,9 +36,9 @@ module.exports = {
 
         if (i.customId === "cancel_restart") {
           const cancelEmbed = new EmbedBuilder()
-            .setColor("Red")
-            .setTitle("> ❌ Restart Dibatalkan")
-            .setDescription("restart dibatalkann sama kenn.")
+            .setColor("Yellow")
+            // .setTitle("> ❌ Restart Dibatalkan")
+            .setDescription("## ❌ Restart Dibatalkan\nrestart dibatalkann sama kenn.")
             .setThumbnail(interaction.client.user.displayAvatarURL())
             .setTimestamp();
 
@@ -53,8 +53,8 @@ module.exports = {
         if (i.customId === "confirm_restart") {
           const restartEmbed = new EmbedBuilder()
             .setColor("Yellow")
-            .setTitle("> ♾️ Bot Restart")
-            .setDescription("bot lagi direstart... tunggu bentar yakk kenn <:kennmchead:1375315784456343572>")
+            // .setTitle("> ♾️ Bot Restart")
+            .setDescription("## ♾️ Bot Restart\nbot lagi direstart... tunggu bentar yakk kenn <:kennmchead:1375315784456343572>")
             .setThumbnail(interaction.client.user.displayAvatarURL())
             .setTimestamp();
           await i.update({ embeds: [restartEmbed], components: [], content: "" });
@@ -69,9 +69,9 @@ module.exports = {
       collector.on("end", async (collected, reason) => {
         if (reason === "time") {
           const timeoutEmbed = new EmbedBuilder()
-            .setColor("Red")
-            .setTitle("> ⌛ Waktu habis")
-            .setDescription("waktu habis! kenn ngga ngapa ngapainn 😭")
+            .setColor("Yellow")
+            // .setTitle("> ⌛ Waktu habis")
+            .setDescription("## ⌛ Waktu habis\nwaktu habis! kenn ngga ngapa ngapainn 😭")
             .setThumbnail(interaction.client.user.displayAvatarURL());
 
           await interaction.editReply({

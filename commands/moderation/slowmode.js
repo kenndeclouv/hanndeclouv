@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { checkPermission } = require("../../helpers");
+const { checkPermission, embedFooter } = require("../../helpers");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -29,11 +29,11 @@ module.exports = {
 
     await interaction.channel.setRateLimitPerUser(duration);
     const embed = new EmbedBuilder()
-      .setColor("Green")
-      .setDescription(`⏳ | Slowmode set to **${duration}** seconds.`)
+      .setColor("Blue")
+      .setDescription(`## ⏳ Slowmode\nSlowmode set to **${duration}** seconds.`)
       .setThumbnail(interaction.client.user.displayAvatarURL())
       .setTimestamp()
-      .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+      .setFooter(embedFooter(interaction));
     return interaction.editReply({ embeds: [embed] });
   },
 };

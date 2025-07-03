@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const User = require("../../database/models/User");
+const { embedFooter } = require("../../helpers");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -16,43 +17,43 @@ module.exports = {
     await interaction.deferReply();
     try {
       const bet = interaction.options.getInteger("bet");
-      const user = await User.findOne({
-        where: { userId: interaction.user.id },
-      });
+      const user = await User.getCache({ userId: interaction.user.id, guildId: interaction.guild.id });
 
       if (!user || user.cash < bet) {
         return interaction.editReply({ content: "❌ | kamu tidak memiliki uang yang cukup untuk bertaruh!" });
       }
 
       const slotResults = ["🍒", "🍋", "🍊"];
-      const winChance = 0.1; // 10% chance
+      const winChance = 0.3; // 30% chance
       const roll = Array(3)
         .fill()
         .map(() => (Math.random() < winChance ? slotResults[0] : slotResults[Math.floor(Math.random() * slotResults.length)]));
 
       if (roll.every((symbol) => symbol === roll[0])) {
         user.cash += bet * 3; // Triple win
-        await user.save();
+        user.changed("cash", true);
+        await user.saveAndUpdateCache("userId");
 
         const embed = new EmbedBuilder()
           .setColor("Green")
-          .setTitle("> Hasil Bermain Slot")
+          // .setTitle("> Hasil Bermain Slot")
           .setThumbnail(interaction.user.displayAvatarURL())
-          .setDescription(`${interaction.user.username} menang! **${roll.join(" | ")}** ${interaction.user.username} tripled taruhan ${interaction.user.username} dan mendapatkan **${bet * 3} uang**!`)
+          .setDescription(`## 🎰 Hasil Bermain Slot\n${interaction.user.username} menang! **${roll.join(" | ")}** ${interaction.user.username} tripled taruhan ${interaction.user.username} dan mendapatkan **${bet * 3} uang**!`)
           .setTimestamp()
-          .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+          .setFooter(embedFooter(interaction));
         return interaction.editReply({ embeds: [embed] });
       } else {
         user.cash -= bet; // Lose the bet
-        await user.save();
+        user.changed("cash", true);
+        await user.saveAndUpdateCache("userId");
 
         const embed = new EmbedBuilder()
           .setColor("Red")
-          .setTitle("> Hasil Bermain Slot")
+          // .setTitle("> Hasil Bermain Slot")
           .setThumbnail(interaction.user.displayAvatarURL())
-          .setDescription(`❌ | ${interaction.user.username} kalah! **${roll.join(" | ")}** kamu kehilangan **${bet} uang**.`)
+          .setDescription(`## 🎰 Hasil Bermain Slot\n❌ | ${interaction.user.username} kalah! **${roll.join(" | ")}** kamu kehilangan **${bet} uang**.`)
           .setTimestamp()
-          .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+          .setFooter(embedFooter(interaction));
         return interaction.editReply({ embeds: [embed] });
       }
     } catch (error) {

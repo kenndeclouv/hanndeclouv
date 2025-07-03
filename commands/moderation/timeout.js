@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
-const { checkPermission } = require("../../helpers");
+const { checkPermission, embedFooter } = require("../../helpers");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -35,12 +35,12 @@ module.exports = {
       try {
         await member.timeout(duration, "Timeout by command.");
         const embed = new EmbedBuilder()
-          .setColor("Green")
-          .setTitle(`> Timeout member`)
-          .setDescription(`<@${user.id}> telah dibatasi selama **${duration / 1000}** detik.`)
+          .setColor("Red")
+          // .setTitle(`> Timeout member`)
+          .setDescription(`## 🔴 Timeout\n<@${user.id}> telah dibatasi selama **${duration / 1000}** detik.`)
           .setThumbnail(interaction.client.user.displayAvatarURL())
           .setTimestamp()
-          .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+          .setFooter(embedFooter(interaction));
         return interaction.editReply({ embeds: [embed] });
       } catch (error) {
         console.error("Error during timeout:", error);

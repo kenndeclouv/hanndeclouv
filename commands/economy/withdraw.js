@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
 const User = require("../../database/models/User");
+const { embedFooter } = require("../../helpers");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -16,9 +17,7 @@ module.exports = {
     await interaction.deferReply();
     try {
       const amount = interaction.options.getInteger("amount");
-      const user = await User.findOne({
-        where: { userId: interaction.user.id },
-      });
+      const user = await User.getCache({ userId: interaction.user.id, guildId: interaction.guild.id });
 
       if (!user || user.bank < amount) {
         return interaction.editReply({ content: "kamu tidak memiliki uang yang cukup di bank untuk menarik uang!" });
@@ -26,7 +25,9 @@ module.exports = {
 
       user.bank -= amount;
       user.cash += amount;
-      await user.save();
+      user.changed("bank", true);
+      user.changed("cash", true);
+      await user.saveAndUpdateCache("userId");
 
       const embed = new EmbedBuilder()
         .setColor("Green")
@@ -34,7 +35,7 @@ module.exports = {
         .setThumbnail(interaction.user.displayAvatarURL())
         .setDescription(`${interaction.user.username} menarik **${amount} uang** dari bank.`)
         .setTimestamp()
-        .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
+        .setFooter(embedFooter(interaction));
       await interaction.editReply({ embeds: [embed] });
     } catch (error) {
       console.error("Error during withdraw command execution:", error);

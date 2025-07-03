@@ -1,7 +1,7 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 const { EmbedBuilder, WebhookClient } = require("discord.js");
 const Checklist = require("../../database/models/Checklist");
-const { checkPermission } = require("../../helpers");
+const { checkPermission, embedFooter } = require("../../helpers");
 require("dotenv").config();
 
 module.exports = {
@@ -110,7 +110,7 @@ module.exports = {
         .setColor("Red")
         .setTitle(`> ❌ Error command /adventure`)
         .setDescription(`\`\`\`${error}\`\`\``)
-        .setFooter(`Error dari server ${interaction.guild.name}`)
+        .setFooter({ text: `Error dari server ${interaction.guild.name}` })
         .setTimestamp();
 
       // Kirim ke webhook
@@ -155,7 +155,7 @@ async function addChecklist(interaction, guildId, userId, group) {
     .setTitle(`✅ Item Ditambahkan ke Checklist ${scope}`)
     .setDescription(`**Item:**\n> \`${item}\``)
     .setColor(color)
-    .setFooter({ text: `Gunakan /checklist ${scope.toLowerCase()} list untuk melihat semua item!` })
+    .setFooter(embedFooter(interaction))
     .setTimestamp();
 
   await interaction.reply({
@@ -167,7 +167,7 @@ async function addChecklist(interaction, guildId, userId, group) {
 async function removeChecklist(interaction, guildId, userId, group) {
   const index = interaction.options.getInteger("index") - 1;
 
-  const checklist = await Checklist.findOne({ where: { guildId, userId } });
+  const checklist = await Checklist.getCache({ guildId: guildId, userId: userId });
   if (!checklist) {
     const scope = userId ? "Personal" : "Server";
     const embed = new EmbedBuilder()
@@ -210,7 +210,7 @@ async function removeChecklist(interaction, guildId, userId, group) {
     .setTitle(`🗑️ Item Dihapus dari Checklist ${scope}`)
     .setDescription(`**Item:**\n> \`${removed[0].text}\``)
     .setColor(color)
-    .setFooter({ text: `Gunakan /checklist ${scope.toLowerCase()} list untuk melihat semua item!` })
+    .setFooter(embedFooter(interaction))
     .setTimestamp();
 
   await interaction.reply({
@@ -222,7 +222,7 @@ async function removeChecklist(interaction, guildId, userId, group) {
 async function toggleChecklist(interaction, guildId, userId, group) {
   const index = interaction.options.getInteger("index") - 1;
 
-  const checklist = await Checklist.findOne({ where: { guildId, userId } });
+  const checklist = await Checklist.getCache({ guildId: guildId, userId: userId });
   if (!checklist) {
     const scope = userId ? "Personal" : "Server";
     const embed = new EmbedBuilder()
@@ -269,7 +269,7 @@ async function toggleChecklist(interaction, guildId, userId, group) {
       { name: "Status", value: status, inline: true }
     )
     .setColor(color)
-    .setFooter({ text: `Gunakan /checklist ${scope.toLowerCase()} list untuk melihat semua item!` })
+    .setFooter(embedFooter(interaction))
     .setTimestamp();
 
   await interaction.reply({
@@ -279,7 +279,7 @@ async function toggleChecklist(interaction, guildId, userId, group) {
 }
 
 async function listChecklist(interaction, guildId, userId, group) {
-  const checklist = await Checklist.findOne({ where: { guildId, userId } });
+  const checklist = await Checklist.getCache({ guildId: guildId, userId: userId });
   if (!checklist) {
     const scope = userId ? "Personal" : "Server";
     const embed = new EmbedBuilder()
@@ -334,7 +334,7 @@ async function listChecklist(interaction, guildId, userId, group) {
     .setTitle(`📋 Checklist ${scope}`)
     .setColor(color)
     .setTimestamp()
-    .setFooter({ text: `Total: ${items.length} item${items.length > 1 ? "s" : ""}` });
+    .setFooter(embedFooter(interaction));
 
   descArr.forEach((desc, idx) => {
     embed.addFields({
@@ -350,7 +350,7 @@ async function listChecklist(interaction, guildId, userId, group) {
 }
 
 async function clearChecklist(interaction, guildId, userId, group) {
-  const checklist = await Checklist.findOne({ where: { guildId, userId } });
+  const checklist = await Checklist.getCache({ guildId: guildId, userId: userId });
   if (!checklist) {
     const scope = userId ? "Personal" : "Server";
     const embed = new EmbedBuilder()
