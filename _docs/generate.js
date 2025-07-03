@@ -204,7 +204,7 @@ const path = require("path");
 const { ApplicationCommandOptionType } = require("discord.js");
 
 const slashCommandsDir = path.join(__dirname, "../commands");
-const docsDir = path.join(__dirname, "./commands");
+const docsDir = path.join(__dirname, "./");
 
 const getAllCommandFiles = (dir, base = "") => {
   let results = [];

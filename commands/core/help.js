@@ -297,7 +297,7 @@ module.exports = {
       }
 
       function getMarkdownContent(category) {
-        const filePath = path.join(__dirname, "../../docs", `${category}.md`);
+        const filePath = path.join(__dirname, "../../docs/commands", `${category}.md`);
         if (!fs.existsSync(filePath)) return ['📂 Dokumentasi belum tersedia untuk kategori ini.'];
 
         let content = fs.readFileSync(filePath, "utf-8");
