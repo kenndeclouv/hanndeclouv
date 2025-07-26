@@ -7,7 +7,7 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName("avatar")
     .setDescription("🖼️ User's avatar")
-    .addUserOption((option) => option.setName("user").setDescription("User ").setRequired(false)),
+    .addUserOption((option) => option.setName("user").setDescription("User yang ingin dilihat avatarnya").setRequired(false)),
   async execute(interaction) {
     if (!interaction.guild) {
       return interaction.reply({

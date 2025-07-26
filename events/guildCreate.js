@@ -1,5 +1,6 @@
 const { Events, EmbedBuilder, WebhookClient } = require("discord.js");
 const BotSetting = require("../database/models/BotSetting");
+const { embedFooter } = require("../helpers");
 require("dotenv").config();
 module.exports = {
   name: Events.GuildCreate,
@@ -57,26 +58,33 @@ module.exports = {
     if (channel) {
       const welcomeEmbed = new EmbedBuilder()
         .setColor("Blue")
-        .setTitle(`> 🎉 Terima kasih sudah mengundangku!`)
+        // .setTitle(`> 🎉 Terima kasih sudah mengundangku!`)
         .setDescription(
-          `Halo semuanya! Aku **${guild.client.user.username}** siap membantu server ini!\n\n` +
-            `Berikut beberapa langkah awal yang bisa kamu lakukan:\n` +
-            `• Gunakan perintah \`/help\` untuk melihat semua fitur dan commandku.\n` +
-            `• Atur pengaturan server dengan \`/set\` (khusus admin).\n` +
-            `• Cek websiteku di [kenndeclouv.my.id](https://kenndeclouv.my.id) untuk dokumentasi dan info lebih lanjut.\n\n` +
-            `Jika butuh bantuan, mention aku atau hubungi ownerku \`kenndeclouv\`!\n\n` +
-            `-# © all rights reserved`
+          `## 🎉 Terima kasih sudah mengundangku!\n` +
+          `Halo semuanyaa! Aku **${guild.client.user.username}** siap membantu server ini!\n\n` +
+          `Berikut beberapa langkah awal yang bisa kamu lakukan:\n` +
+          `• Gunakan perintah </help:1387624230706876554> untuk melihat semua fitur dan commandku.\n` +
+          `• Atur pengaturan server dengan </set view:1387624231788875848> (khusus admin).\n` +
+          `• Cek websiteku di [kythia.my.id](https://bot.kythia.my.id/docs/#/) untuk dokumentasi dan info lebih lanjut.\n\n` +
+          `Jika butuh bantuan, mention aku atau hubungi ownerku \`kenndeclouv\`!\n\n` +
+          `-# © all rights reserved`
         )
         .setThumbnail(guild.client.user.displayAvatarURL())
-        .setFooter({
-          text: `Bot ${guild.client.user.username} siap melayani!`,
-          iconURL: guild.client.user.displayAvatarURL(),
-        })
+        .setFooter(embedFooter(interaction))
         .setTimestamp();
 
       channel.send({ embeds: [welcomeEmbed] }).catch(() => {
         // fallback jika embed gagal
-        channel.send(`Halo, aku **${guild.client.user.username}** baru bergabung! Gunakan \`/help\` untuk mulai.`);
+        channel.send(
+          `## 🎉 Terima kasih sudah mengundangku!\n` +
+          `Halo semuanyaa! Aku **${guild.client.user.username}** siap membantu server ini!\n\n` +
+          `Berikut beberapa langkah awal yang bisa kamu lakukan:\n` +
+          `• Gunakan perintah </help:1387624230706876554> untuk melihat semua fitur dan commandku.\n` +
+          `• Atur pengaturan server dengan </set view:1387624231788875848> (khusus admin).\n` +
+          `• Cek websiteku di [kythia.my.id](https://bot.kythia.my.id/docs/#/) untuk dokumentasi dan info lebih lanjut.\n\n` +
+          `Jika butuh bantuan, mention aku atau hubungi ownerku \`kenndeclouv\`!\n\n` +
+          `-# © all rights reserved`
+        );
       });
     }
   },

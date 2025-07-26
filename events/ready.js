@@ -2,6 +2,7 @@ require("dotenv").config();
 const { WebhookClient, ActivityType, EmbedBuilder } = require("discord.js");
 const BotSetting = require("../database/models/BotSetting");
 const { updateStats, updateMinecraftStats } = require("../helpers");
+const pteroUpdater = require("../tasks/pteroUpdater");
 
 module.exports = {
   name: "ready",
@@ -66,7 +67,8 @@ module.exports = {
 
       webhookClient.send({ embeds: [errorEmbed] }).catch(console.error);
     }
-
+    // PTERODACTYL
+    // await pteroUpdater(client);
     console.log(`✅ ${client.user.tag} siap di semua server!`);
   },
 };

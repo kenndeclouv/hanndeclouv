@@ -21,7 +21,7 @@ module.exports = {
           .setLabel("🚀 Invite Bot")
           .setStyle(ButtonStyle.Link)
           .setURL(`https://discord.com/oauth2/authorize?client_id=${interaction.client.user.id}&permissions=8&scope=bot+applications.commands`),
-        new ButtonBuilder().setLabel("🌐 Website").setStyle(ButtonStyle.Link).setURL("https://kythia.my.id"),
+        new ButtonBuilder().setLabel("🌐 Website").setStyle(ButtonStyle.Link).setURL("https://bot.kythia.my.id/docs/#/"),
         new ButtonBuilder().setLabel("👑 Owner Web").setStyle(ButtonStyle.Link).setURL("https://kenndeclouv.my.id")
       );
 

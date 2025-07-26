@@ -44,11 +44,11 @@ module.exports = {
                         .setRequired(false)
                 )
         ),
-        // .addSubcommand(sub =>
-        //     sub
-        //         .setName("list")
-        //         .setDescription("Lihat semua transaksi yang tercatat.")
-        // ),
+    // .addSubcommand(sub =>
+    //     sub
+    //         .setName("list")
+    //         .setDescription("Lihat semua transaksi yang tercatat.")
+    // ),
     aliases: ["trx", "transaksi"],
 
     async autocomplete(interaction) {
@@ -59,12 +59,18 @@ module.exports = {
         if (!guildId) return interaction.respond([]);
 
         if (focusedName === "product") {
-            const products = await Product.findAll({ where: { guildId } });
+            // Ambil produk beserta kategori
+            const products = await Product.findAll({ where: { guildId }, include: [{ model: Category, as: "category" }] });
             return interaction.respond(
                 products
                     .filter(p => p.name.toLowerCase().includes(focused.toLowerCase()))
                     .slice(0, 25)
-                    .map(p => ({ name: p.name, value: p.name }))
+                    .map(p => ({
+                        name: p.category && p.category.name
+                            ? `${p.name} - ${p.category.name}`
+                            : p.name,
+                        value: p.name
+                    }))
             );
         }
         return interaction.respond([]);

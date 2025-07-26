@@ -1,4 +1,5 @@
-const { SlashCommandBuilder } = require("discord.js");
+const { SlashCommandBuilder, PermissionsBitField } = require("discord.js");
+const { checkPermission } = require("../../helpers");
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -22,7 +23,7 @@ module.exports = {
     }
     const message = interaction.options.getString("message");
 
-    if (!interaction.member.permissions.has("MANAGE_MESSAGES")) {
+    if (!interaction.member.permissions.has(PermissionsBitField.Flags.ManageMessages)) {
       return interaction.editReply({
         content: "Kamu tidak memiliki izin untuk menggunakan perintah ini.",
       });

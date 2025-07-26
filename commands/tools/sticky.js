@@ -38,7 +38,7 @@ module.exports = {
                     .setTitle("> 📌 Sticky Message")
                     .setDescription(pesan)
                     .setColor("Yellow")
-                    .setFooter(embedFooter(interaction));
+                    .setFooter({ text: `Sistem`, iconURL: interaction.client.user.displayAvatarURL() });
 
                 const message = await interaction.channel.send({ embeds: [stickyEmbed] });
 

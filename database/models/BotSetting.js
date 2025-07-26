@@ -28,6 +28,7 @@ class BotSetting extends CacheableModel {
         antiLinkOn: { type: DataTypes.BOOLEAN, defaultValue: false },
         antiSpamOn: { type: DataTypes.BOOLEAN, defaultValue: false },
         antiBadwordOn: { type: DataTypes.BOOLEAN, defaultValue: false },
+        antiMentionOn: { type: DataTypes.BOOLEAN, defaultValue: false },
         serverStatsOn: { type: DataTypes.BOOLEAN, defaultValue: false },
         economyOn: { type: DataTypes.BOOLEAN, defaultValue: false },
         giveawayOn: { type: DataTypes.BOOLEAN, defaultValue: false },
@@ -92,12 +93,22 @@ class BotSetting extends CacheableModel {
         feedbackChannelId: { type: DataTypes.STRING, allowNull: true },
         testimonyCount: { type: DataTypes.BIGINT, defaultValue: 0 },
         testimonyCountFormat: { type: DataTypes.STRING, allowNull: true }, // testimony-{count} || {count}-testi
-        testimonyCountChannelId: { type: DataTypes.STRING, allowNull: true, defaultValue: 0 },
+        testimonyCountChannelId: { type: DataTypes.STRING, allowNull: true },
 
         // IMAGES URL
         welcomeInImageUrl: { type: DataTypes.STRING, allowNull: true },
         welcomeOutImageUrl: { type: DataTypes.STRING, allowNull: true },
 
+        // STORE
+        openCloseType: {
+          type: DataTypes.ENUM("channelname", "channelmessage", "channelnameandmessage"),
+          allowNull: true,
+        },
+        openCloseChannelId: { type: DataTypes.STRING, allowNull: true },
+        openChannelNameFormat: { type: DataTypes.STRING, allowNull: true },
+        closeChannelNameFormat: { type: DataTypes.STRING, allowNull: true },
+        openChannelMessageFormat: { type: DataTypes.JSON, defaultValue: [] },
+        closeChannelMessageFormat: { type: DataTypes.JSON, defaultValue: [] },
       },
       {
         sequelize,

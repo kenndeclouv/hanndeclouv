@@ -179,8 +179,6 @@ module.exports = {
             try {
               const dmEmbed = new EmbedBuilder()
                 .setColor("Blue")
-                // .setTitle("> 🎫 Kamu telah ditambahkan ke tiket!")
-                .setDescription(`## 🎫 Kamu telah ditambahkan ke tiket!`)
                 .setDescription(
                   `Kamu telah ditambahkan ke channel tiket [#${interaction.channel.name}](https://discord.com/channels/${interaction.guild.id}/${interaction.channel.id}) di server **${interaction.guild.name}**.\n\nSilakan cek channel tersebut untuk membantu atau berdiskusi.`
                 )

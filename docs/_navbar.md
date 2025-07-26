@@ -2,4 +2,4 @@
   - [🇮🇩 Indonesia](/)
   - [🇺🇸 English](/en-us/)
 
-- [Join Us]
+- [Join Us](https://discord.gg/HmUTjbAhGu)

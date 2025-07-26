@@ -53,6 +53,30 @@ module.exports = {
                         .setDescription("Gunakan category ID yang sudah ada (abaikan jika buat category)")
                         .setRequired(false)
                 )
+        )
+        .addSubcommand(subcommand =>
+            subcommand.setName("store")
+                .setDescription("Setup otomatis channel open/close store")
+                .addBooleanOption(option =>
+                    option.setName("newcategory")
+                        .setDescription("Buat category baru atau tidak")
+                        .setRequired(true)
+                )
+                .addStringOption(option =>
+                    option.setName("type")
+                        .setDescription("Tipe aksi store (ubah nama channel, kirim pesan, atau keduanya).")
+                        .addChoices(
+                            { name: "Ubah Nama Channel", value: "channelname" },
+                            { name: "Kirim Pesan Embed", value: "channelmessage" },
+                            { name: "Nama + Pesan", value: "channelnameandmessage" }
+                        )
+                        .setRequired(true)
+                )
+                .addStringOption(option =>
+                    option.setName("category_id")
+                        .setDescription("Gunakan category ID yang sudah ada (abaikan jika buat category)")
+                        .setRequired(false)
+                )
         ),
 
     async execute(interaction) {
@@ -326,6 +350,85 @@ module.exports = {
 
                     await interaction.editReply({
                         content: `✅ Berhasil setup Minecraft server stat channel 😋\n\n🌐 <#${ipChannel.id}>\n🔌 <#${portChannel.id}>\n🔵 <#${statusChannel.id}>\n🎮 <#${playersChannel.id}>`
+                    });
+                    break;
+                }
+                case "store": {
+                    let category = null;
+
+                    if (newCategory) {
+                        category = await guild.channels.create({
+                            name: "🛒・store",
+                            type: ChannelType.GuildCategory,
+                        });
+                    } else {
+                        category = guild.channels.cache.get(existingCategoryId);
+                        if (!category || category.type !== ChannelType.GuildCategory) {
+                            return interaction.editReply({ content: "❌ Category ID tidak valid!" });
+                        }
+                    }
+
+                    // Buat channel untuk open/close store
+                    const storeChannel = await guild.channels.create({
+                        name: "🟢・store-open",
+                        type: ChannelType.GuildText,
+                        parent: category.id,
+                        permissionOverwrites: [
+                            {
+                                id: guild.roles.everyone,
+                                allow: [PermissionFlagsBits.ViewChannel],
+                            },
+                        ],
+                    });
+
+                    // Default values mirip dengan store.js
+                    const type = interaction.options.getString("type") || "channelnameandmessage";
+                    const openName = "🟢・store-open";
+                    const openTitle = "🟢 STORE OPEN";
+                    const openDesc = "Store sedang DIBUKA! Silakan order sekarang.";
+                    const openColor = "Green";
+                    const closeName = "🔴・store-closed";
+                    const closeTitle = "🔴 STORE CLOSE";
+                    const closeDesc = "Store sedang DITUTUP. Silakan kembali lagi nanti.";
+                    const closeColor = "Red";
+
+                    // validasi kalau tipenya butuh message
+                    if (["channelmessage", "channelnameandmessage"].includes(type)) {
+                        if (!openTitle || !openDesc || !closeTitle || !closeDesc) {
+                            return interaction.editReply({
+                                content: "❌ | Karena kamu memilih tipe yang mengirim embed, kamu wajib mengisi `open_title`, `open_description`, `close_title`, dan `close_description`.",
+                                ephemeral: true
+                            });
+                        }
+                    }
+
+                    // Format embed OPEN
+                    const openEmbed = (openTitle || openDesc) ? [{
+                        title: openTitle || undefined,
+                        description: openDesc || undefined,
+                        color: openColor
+                    }] : [];
+
+                    // Format embed CLOSE
+                    const closeEmbed = (closeTitle || closeDesc) ? [{
+                        title: closeTitle || undefined,
+                        description: closeDesc || undefined,
+                        color: closeColor
+                    }] : [];
+
+                    // simpan ke database
+                    const botSetting = await BotSetting.getCache({ guildId: guild.id });
+                    botSetting.openCloseChannelId = storeChannel.id;
+                    botSetting.openCloseType = type;
+                    botSetting.openChannelNameFormat = openName;
+                    botSetting.closeChannelNameFormat = closeName;
+                    botSetting.openChannelMessageFormat = openEmbed;
+                    botSetting.closeChannelMessageFormat = closeEmbed;
+
+                    await botSetting.saveAndUpdateCache("guildId");
+
+                    await interaction.editReply({
+                        content: `✅ Berhasil setup otomatis store open/close!\n\n🛒 <#${storeChannel.id}>`
                     });
                     break;
                 }

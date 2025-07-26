@@ -35,10 +35,10 @@ module.exports = {
     // embed keluar
     const goodbyeEmbed = new EmbedBuilder()
       .setColor("#f7f7f7")
-      .setTitle(`> huhuuu ${member.user.displayName} keluarr 😭`)
+      // .setTitle(`> ${member.user.displayName} keluarr 😭`)
       // .setDescription(`${member.user.displayName} kami selalu merindukanmuu 😭\n`)
-      .setDescription(setting.welcomeOutText ? `<@${member.user.id}> ${setting.welcomeOutText}` : `huhuuu <@${member.user.id}> keluar dari server inii\nsemoga kamuu kembalii😭`)
-      .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
+      .setDescription(setting.welcomeOutText ? `${member.user.displayName} ${setting.welcomeOutText}` : `## 🚪 ${member.user.displayName} keluarr \n${member.user.displayName} keluar dari server inii\nsemoga kamuu kembalii😭`)
+      // .setThumbnail(member.user.displayAvatarURL({ dynamic: true }))
       .setTimestamp()
       .setFooter({
         text: `sistem ${guild.name}`,

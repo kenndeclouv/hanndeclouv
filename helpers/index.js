@@ -5,9 +5,11 @@ const BotSetting = require("../database/models/BotSetting");
 const Premium = require("../database/models/Premium");
 const Ticket = require("../database/models/Ticket");
 const User = require("../database/models/User");
+const https = require("https");
 const axios = require("axios");
 const path = require("path");
 require("dotenv").config();
+const net = require("net");
 const fs = require("fs");
 // const canvas = require("canvas");
 // Initialize langs object to store language data
@@ -233,7 +235,7 @@ const addXp = async (guildId, userId, xpToAdd, message, channel) => {
             .setThumbnail(message.author.displayAvatarURL())
             .setTimestamp()
             .setFooter({
-              text: `Sistem Level`,
+              text: `© ${message.client.user.username} by kenndeclouv`,
               iconURL: message.client.user.displayAvatarURL(),
             })
         );
@@ -259,7 +261,7 @@ const addXp = async (guildId, userId, xpToAdd, message, channel) => {
     .setImage("attachment://levelup.png") // 🟢 ini cara benernya
     .setTimestamp()
     .setFooter({
-      text: `sistem level`,
+      text: "leveling system",
       iconURL: message.client.user.displayAvatarURL(),
     });
 
@@ -1373,6 +1375,91 @@ const embedFooter = (interaction) => ({
   iconURL: interaction.client.user.displayAvatarURL({ dynamic: true })
 });
 
+async function checkNodeStatus(fqdn, port, apiKey) {
+  return new Promise((resolve) => {
+    const socket = new net.Socket();
+    socket.setTimeout(3000);
+
+    socket.on("connect", () => {
+      socket.destroy();
+      resolve(true);
+    });
+
+    socket.on("error", () => resolve(false));
+    socket.on("timeout", () => {
+      socket.destroy();
+      resolve(false);
+    });
+
+    socket.connect(port, fqdn);
+  });
+};
+
+function progressBar(current, total, size = 10) {
+  const ratio = Math.min(current / total, 1);
+  const filled = Math.round(ratio * size);
+  return "▰".repeat(filled) + "▱".repeat(size - filled);
+};
+
+async function generateNodeEmbed(ptero, clientUser) {
+  const refreshTimestamp = Math.floor(Date.now() / 1000) + 60;
+  const panelUrl = ptero.link;
+
+  const embed = new EmbedBuilder()
+    .setColor("Blue")
+    .setTimestamp()
+    .setFooter({
+      text: `© ${clientUser.username} by kenndeclouv`,
+      iconURL: clientUser.displayAvatarURL({ dynamic: true })
+    });
+
+  try {
+    const { data } = await axios.get(`${panelUrl}/api/application/nodes`, {
+      headers: { Authorization: `Bearer ${ptero.apiKey}` },
+      timeout: 10000
+    });
+
+    let allNodesText = "## 📡 Pterodactyl Node Monitor\nReal time status node\n\n";
+
+    for (const node of data.data) {
+      const a = node.attributes;
+      const usedMem = a.allocated_resources.memory || 0;
+      const usedDisk = a.allocated_resources.disk || 0;
+
+      const isOnline = await checkNodeStatus(a.fqdn, a.daemon_listen);
+      const status = isOnline
+        ? (a.maintenance_mode ? "🛠️ Maintenance" : "<a:a_success:1393344464214429716>")
+        : "<a:a_danger:1393344725410385951>";
+
+      allNodesText += `### ${status} ${a.name}
+\
+\`\`\`
+` +
+        `ip     : ${a.fqdn}
+` +
+        `ram    : ${usedMem} / ${a.memory} MB
+` +
+        `${progressBar(usedMem, a.memory)}
+` +
+        `disk   : ${usedDisk} / ${a.disk} MB
+` +
+        `${progressBar(usedDisk, a.disk)}
+\`\`\`
+
+`;
+    }
+
+    allNodesText += `🔄 refresh <t:${refreshTimestamp}:R>`;
+    embed.setDescription(allNodesText);
+
+  } catch (err) {
+    embed.setColor("Red").setDescription("❌ gagal ambil data node");
+    console.log(`[PteroEmbed] gagal ambil node dari ${panelUrl}: ${err.message}`);
+  }
+
+  return embed;
+};
+
 module.exports = {
   t,
   checkCooldown,
@@ -1396,4 +1483,7 @@ module.exports = {
   generateWelcomeInImage,
   checkIsPremium,
   embedFooter,
+  checkNodeStatus,
+  progressBar,
+  generateNodeEmbed
 };

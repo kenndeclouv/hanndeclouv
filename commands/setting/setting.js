@@ -457,7 +457,7 @@ const builder = new SlashCommandBuilder()
         sub
           .setName("count")
           .setDescription("Ubah jumlah testimoni")
-          .addIntegerOption((opt) => opt.setName("value").setDescription("Integer").setRequired(true))
+          .addIntegerOption((opt) => opt.setName("count").setDescription("Jumlah testimoni baru").setRequired(true))
       )
   )
   // STANDALONE
@@ -1230,15 +1230,55 @@ module.exports = {
             }
             case "reset-count": {
               botSetting.testimonyCount = 0;
+              botSetting.changed("testimonyCount");
               await botSetting.saveAndUpdateCache("guildId");
               embed.setDescription("✅ Jumlah testimoni berhasil direset ke 0!");
+
+              // Update channel name if testimonyCountChannelId is set
+              if (botSetting.testimonyCountChannelId) {
+                try {
+                  const testimonyCountChannel = await interaction.client.channels.fetch(botSetting.testimonyCountChannelId).catch(() => null);
+                  if (testimonyCountChannel) {
+                    let format = botSetting.testimonyCountFormat || '{count} Testimonies';
+                    const newName = format.replace(/{count}/gi, botSetting.testimonyCount);
+                    if (testimonyCountChannel.name !== newName) {
+                      await testimonyCountChannel.setName(newName);
+                    }
+                  }
+                } catch (err) {
+                  console.error(`❌ Gagal update nama channel testimoni:`, err);
+                }
+              }
+
               return interaction.editReply({ embeds: [embed] });
             }
             case "count": {
               const count = interaction.options.getInteger("count");
+              if (typeof count !== "number" || count < 0) {
+                embed.setDescription("❌ Jumlah testimoni harus berupa angka positif.");
+                return interaction.editReply({ embeds: [embed] });
+              }
               botSetting.testimonyCount = count;
+              botSetting.changed("testimonyCount");
               await botSetting.saveAndUpdateCache("guildId");
               embed.setDescription(`✅ Jumlah testimoni berhasil diatur ke ${count}!`);
+
+              // Update channel name if testimonyCountChannelId is set
+              if (botSetting.testimonyCountChannelId) {
+                try {
+                  const testimonyCountChannel = await interaction.client.channels.fetch(botSetting.testimonyCountChannelId).catch(() => null);
+                  if (testimonyCountChannel) {
+                    let format = botSetting.testimonyCountFormat || '{count} Testimonies';
+                    const newName = format.replace(/{count}/gi, botSetting.testimonyCount);
+                    if (testimonyCountChannel.name !== newName) {
+                      await testimonyCountChannel.setName(newName);
+                    }
+                  }
+                } catch (err) {
+                  console.error(`❌ Gagal update nama channel testimoni:`, err);
+                }
+              }
+
               return interaction.editReply({ embeds: [embed] });
             }
           }

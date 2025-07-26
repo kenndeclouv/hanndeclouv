@@ -403,7 +403,8 @@ main.hidden {
     display: block;
     margin-bottom: 4px;
     width: 16px;
-    height: 2px;
+    height: 3px;
+    border-radius: 10px !important;
 }
 
 body.sticky .sidebar,
